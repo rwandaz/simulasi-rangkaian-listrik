@@ -692,7 +692,8 @@
           this.showToast('Komponen dihapus! 🗑️', 'normal');
         }
       };
-      document.getElementById('btn-delete-selected').addEventListener('click', handleDelete);
+      const btnDeleteSelected = document.getElementById('btn-delete-selected');
+      if (btnDeleteSelected) btnDeleteSelected.addEventListener('click', handleDelete);
       const btnCompDelete = document.getElementById('btn-comp-delete');
       if (btnCompDelete) btnCompDelete.addEventListener('click', handleDelete);
 
