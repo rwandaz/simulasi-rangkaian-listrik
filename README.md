@@ -16,12 +16,14 @@ Aplikasi web interaktif simulasi rangkaian listrik untuk siswa Sekolah Dasar (SD
    - **Kontrol Zoom Kanvas:** Fitur zoom in (`➕`), zoom out (`➖`), reset (`100%`), scroll mouse, dan gestur cubit dua jari (pinch gesture) pada layar sentuh.
 
 2. **Komponen Visual & Fisika Realistis:**
-   - **Alat Ukur Voltmeter Digital:**
-     - **Voltmeter Portabel:** Dilengkapi probe kabel merah (+) dan probe hitam (−) yang dapat digeser bebas untuk mengukur beda potensial antar titik sambungan secara akurat.
-     - **Voltmeter Rangkaian:** Komponen voltmeter dalam kotak alat yang dapat dipasang paralel di sirkuit untuk membaca voltase secara langsung.
-   - **Alat Ukur Amperemeter Digital:**
-     - **Amperemeter Sensor Contactless:** Dilengkapi sensor penjepit portabel yang dapat didekatkan ke kabel atau komponen untuk mengukur kuat arus (Ampere) tanpa harus memutus kabel.
-     - **Amperemeter Rangkaian:** Komponen amperemeter dalam kotak alat yang dipasang seri di dalam sirkuit dengan layar LCD hijau menyala.
+   - **Instrumen Multimeter & Amperemeter Realistis (Dock Samping Kanan):**
+     - **Panel Dock Instrumen di Samping Kanan:** Siswa dapat mencentang atau mengklik kartu Voltmeter maupun Amperemeter untuk memunculkan instrumen di kanvas.
+     - **Voltmeter Portabel (Multimeter Kuning):** Bodi multimeter kuning dengan layar LCD digital besar, port soket COM (−) hitam dan V (+) merah, serta dua jarum probe uji kabel fleksibel yang dapat disentuhkan ke titik sambungan.
+     - **Amperemeter Portabel (Meter Biru + Sensor Wand):** Bodi meter biru dengan layar LCD digital dan tongkat sensor portabel ber-target lingkaran silang (`✛`) tanpa perlu memutus rangkaian (*contactless sensor target*).
+     - **Kabel Fleksibel Realistis:** Kabel konektor menghubungkan soket instrumen ke jarum probe dan sensor secara dinamis mengikuti gerakan drag & drop.
+   - **Bilah Kontrol Bawah Terpadu (Bottom Bar):**
+     - Kontrol Zoom terpadu berbentuk pill (`−`, `100%`, `+`) yang responsif pada semua ukuran layar dan gestur sentuh.
+     - Tombol **🗑️ Bersihkan Papan** yang menyatu rapi dan langsung merespon klik/sentuhan seketika tanpa terhalang SVG kanvas.
    - **Baterai (Dapat Diatur):** Tombol `⚡` khusus muncul saat baterai dipilih untuk mengatur tegangan (0–24V). Kutub (+) dan (−) ditandai dengan jelas.
    - **Panel Surya Fotovoltaik:** Sumber daya energi terbarukan ramah lingkungan dengan kisi busbar sel silikon dan pengaturan tegangan (0–24V).
    - **Dinamo Motor DC:** Beban motor listrik dengan baling-baling 3 daun yang berputar secara otomatis dan dinamis sesuai tegangan listrik!
@@ -44,18 +46,20 @@ Aplikasi web interaktif simulasi rangkaian listrik untuk siswa Sekolah Dasar (SD
 
 ```
 simulasi-rangkaian-listrik/
-├── index.html                            <-- Aplikasi Simulasi (Root Entrypoint GitHub Pages)
-├── style.css                             <-- CSS Styling Simulasi
-├── script.js                             <-- Mesin Fisika & Animasi Simulasi
+├── index.html                            <-- Pengalihan Otomatis (Redirect) ke Rangkaian Listrik/index.html
 ├── README.md                             <-- Dokumentasi Proyek
-├── Rangkaian Listrik/                    <-- Folder Khusus Aplikasi Simulasi
-│   ├── index.html
-│   ├── style.css
-│   └── script.js
-└── WEB/                                  <-- Folder Khusus Tema XML Blogger & Panduan
-    ├── tema-blogger-rangkaian-listrik.xml <-- File XML Tema Lengkap Siap Upload ke Blogger
-    ├── preview-tema.html                 <-- Pratinjau Tampilan Web Lokal
-    └── PANDUAN-PASANG-BLOGGER.md         <-- Panduan Pasang Tema di Blogger
+├── Rangkaian Listrik/                    <-- Folder Utama Aplikasi Simulasi Listrik
+│   ├── index.html                        <-- Berkas HTML Utama Simulasi
+│   ├── style.css                         <-- Styling Desain Interaktif & Instrumen
+│   └── script.js                         <-- Mesin Fisika Rangkaian & Logika Interaksi
+├── WEB/                                  <-- Folder Khusus Tema XML Blogger & Panduan
+│   ├── tema-blogger-rangkaian-listrik.xml <-- File XML Tema Lengkap Siap Upload ke Blogger
+│   ├── preview-tema.html                 <-- Pratinjau Tampilan Web Lokal
+│   └── PANDUAN-PASANG-BLOGGER.md         <-- Panduan Pasang Tema di Blogger
+└── hapus/                                <-- Arsip Berkas yang Dipindahkan dari Root
+    ├── index.html
+    ├── style.css
+    └── script.js
 ```
 
 ---

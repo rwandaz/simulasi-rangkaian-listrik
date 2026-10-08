@@ -1006,60 +1006,100 @@ html, body {
 
 .btn-sel-secondary:hover {
   background: #e2e8f0;
-/* Canvas Zoom Controls (+, Reset, -) */
-.canvas-zoom-controls {
+}
+
+/* ==========================================================================
+   Unified Workbench Bottom Controls Bar (Zoom & Bersihkan Papan)
+   ========================================================================== */
+.workbench-bottom-bar {
   position: absolute;
   bottom: 20px;
-  left: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 85;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.zoom-controls-pill {
   display: flex;
   align-items: center;
   background: #ffffff;
-  border: 2px solid #e2e8f0;
-  border-radius: var(--border-radius-full);
-  padding: 4px;
+  border: 2px solid #cbd5e1;
+  border-radius: 999px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-  z-index: 40;
+  padding: 3px;
   gap: 2px;
+  height: 44px;
 }
 
-.zoom-btn {
-  width: 36px;
+.bar-btn {
   height: 36px;
-  border-radius: 50%;
   border: none;
   background: transparent;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
-  color: #1e293b;
   cursor: pointer;
+  border-radius: 999px;
   transition: all 0.15s ease;
-  user-select: none;
+  font-family: var(--font-heading);
   touch-action: manipulation;
 }
 
-.zoom-btn:hover {
-  background: #f1f5f9;
-  transform: scale(1.1);
+.zoom-step-btn {
+  width: 36px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #1e293b;
 }
 
-.zoom-btn:active {
+.zoom-step-btn:hover {
+  background: #f1f5f9;
+  color: #0284c7;
+  transform: scale(1.08);
+}
+
+.zoom-step-btn:active {
   transform: scale(0.92);
 }
 
-.zoom-btn-reset {
-  width: auto;
-  border-radius: 14px;
+.zoom-reset-btn {
   padding: 0 10px;
-  font-family: var(--font-heading);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: #0284c7;
+  min-width: 58px;
 }
 
-.zoom-btn-reset:hover {
-  background: #f0f9ff;
+.zoom-reset-btn:hover {
+  background: #e0f2fe;
+}
+
+.btn-clear-board {
+  height: 44px;
+  padding: 0 18px;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #dc2626;
+  gap: 8px;
+}
+
+.btn-clear-board:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.18);
+}
+
+.btn-clear-board:active {
+  transform: scale(0.96);
 }
 
 .workbench.panning {
@@ -1067,44 +1107,6 @@ html, body {
 }
 .workbench.panning * {
   cursor: grabbing !important;
-}
-
-/* Workbench Bottom Action Controls */
-.workbench-controls {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  display: flex;
-  gap: 10px;
-  z-index: 40;
-}
-
-.wb-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #ffffff;
-  border: 2px solid #e2e8f0;
-  padding: 10px 16px;
-  border-radius: var(--border-radius-md);
-  font-family: var(--font-heading);
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #334155;
-  cursor: pointer;
-  box-shadow: var(--shadow-card);
-  transition: all 0.2s ease;
-}
-
-.wb-btn:hover {
-  background: #f8fafc;
-  transform: translateY(-2px);
-}
-
-.wb-btn-danger:hover {
-  background: #fef2f2;
-  border-color: #fca5a5;
-  color: #dc2626;
 }
 
 /* Smoke / Fire overlay on short circuit */
@@ -1324,14 +1326,41 @@ html, body {
     font-size: 0.72rem;
   }
 
-  .workbench-controls {
+  .workbench-bottom-bar {
     bottom: 12px;
     right: 12px;
+    gap: 8px;
   }
 
-  .wb-btn {
-    padding: 8px 12px;
-    font-size: 0.8rem;
+  .zoom-controls-pill {
+    height: 38px;
+  }
+
+  .zoom-step-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1.15rem;
+  }
+
+  .btn-clear-board {
+    height: 38px;
+    padding: 0 12px;
+    font-size: 0.82rem;
+  }
+
+  .clear-text {
+    display: none;
+  }
+
+  .instruments-dock {
+    top: 10px;
+    right: 10px;
+    width: 145px;
+    padding: 6px;
+  }
+
+  .dock-card-sub {
+    display: none;
   }
 
   .app-title {
@@ -1342,38 +1371,138 @@ html, body {
     display: none;
   }
 
-  .canvas-zoom-controls {
-    bottom: 12px;
-    left: 12px;
-  }
-
-  .zoom-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 0.85rem;
-  }
-
   .tab-label {
     display: none;
   }
 }
 
 /* ==========================================================================
-   9. Floating Multimeter & Amperemeter Instrument Widgets & Probes
+   9. Instruments Dock (Panel Alat Ukur - Sisi Kanan Kanvas)
+   ========================================================================== */
+.instruments-dock {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 176px;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  padding: 10px;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.dock-header {
+  padding-bottom: 6px;
+  border-bottom: 1.5px solid #f1f5f9;
+  margin-bottom: 8px;
+}
+
+.dock-title {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #334155;
+  letter-spacing: 0.5px;
+}
+
+.dock-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dock-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dock-card:hover {
+  background: #f0f9ff;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.dock-card.active {
+  background: #e0f2fe;
+  border-color: #0284c7;
+}
+
+.dock-card-preview {
+  width: 40px;
+  height: 26px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dock-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dock-card-name {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.dock-card-sub {
+  display: block;
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dock-checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: #0284c7;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   10. Authentic Multimeter & Amperemeter Instruments & Realistic Probes
    ========================================================================== */
 .floating-meter-widget {
   position: absolute;
   z-index: 65;
-  width: 175px;
-  background: #1e293b;
-  border: 2.5px solid #334155;
-  border-radius: 14px;
-  padding: 10px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-  color: #ffffff;
+  width: 180px;
+  border-radius: 16px;
+  padding: 10px 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
   user-select: none;
   touch-action: none;
   animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.meter-voltmeter {
+  background: linear-gradient(145deg, #f59e0b, #d97706);
+  border: 3px solid #b45309;
+  color: #ffffff;
+}
+
+.meter-ammeter {
+  background: linear-gradient(145deg, #0284c7, #0369a1);
+  border: 3px solid #075985;
+  color: #ffffff;
 }
 
 .meter-head {
@@ -1382,140 +1511,255 @@ html, body {
   justify-content: space-between;
   cursor: grab;
   padding-bottom: 6px;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.25);
   font-family: var(--font-heading);
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.5px;
-  color: #94a3b8;
+}
+
+.meter-head:active {
+  cursor: grabbing;
 }
 
 .meter-close {
-  background: transparent;
+  background: rgba(0, 0, 0, 0.2);
   border: none;
-  color: #94a3b8;
+  color: #ffffff;
   font-size: 0.85rem;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 2px 6px;
   border-radius: 4px;
+  transition: all 0.15s ease;
 }
+
 .meter-close:hover {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.15);
+  background: #ef4444;
+  color: #ffffff;
 }
 
 .meter-lcd {
   margin: 8px 0;
-  background: #0f172a;
-  border: 2px solid #0369a1;
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: 8px 12px;
   display: flex;
   align-items: baseline;
   justify-content: flex-end;
   gap: 6px;
   font-family: 'JetBrains Mono', monospace;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
 }
 
-.meter-lcd.ammeter-lcd {
-  border-color: #059669;
+.voltmeter-lcd {
+  background: #0f172a;
+  border: 2px solid #1e293b;
 }
 
-.lcd-value {
-  font-size: 1.55rem;
+.voltmeter-lcd .lcd-value {
+  font-size: 1.65rem;
   font-weight: 900;
   color: #38bdf8;
   letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
 }
 
-.ammeter-lcd .lcd-value {
-  color: #4ade80;
-}
-
-.lcd-unit {
+.voltmeter-lcd .lcd-unit {
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 800;
   color: #94a3b8;
 }
 
-.meter-legend {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #cbd5e1;
+.ammeter-lcd {
+  background: #022c22;
+  border: 2px solid #064e3b;
 }
 
-.legend-red { color: #f87171; }
-.legend-black { color: #94a3b8; }
-.legend-blue { color: #38bdf8; }
+.ammeter-lcd .lcd-value {
+  font-size: 1.65rem;
+  font-weight: 900;
+  color: #4ade80;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+}
 
-/* Floating Probe Handles */
-.floating-probe {
-  position: absolute;
-  z-index: 66;
-  width: 32px;
-  height: 52px;
+.ammeter-lcd .lcd-unit {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #86efac;
+}
+
+.meter-jacks {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 4px;
+}
+
+.jack-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  cursor: grab;
-  touch-action: none;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
-  transform: translate(-50%, -10px);
+  gap: 2px;
 }
 
-.probe-pin {
-  width: 4px;
-  height: 18px;
-  background: #cbd5e1;
-  border: 1px solid #475569;
-  border-radius: 2px 2px 0 0;
-}
-
-.probe-handle {
-  width: 24px;
-  height: 34px;
-  border-radius: 6px;
+.meter-jack {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.75rem;
   font-weight: 900;
-  font-size: 14px;
+  border: 2px solid #cbd5e1;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.jack-black { background: #0f172a; color: #ffffff; }
+.jack-red { background: #ef4444; color: #ffffff; }
+.jack-blue { background: #0284c7; color: #ffffff; }
+
+.jack-label {
+  font-size: 0.65rem;
+  font-weight: 800;
   color: #ffffff;
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* ==========================================================================
+   Realistic Test Needle Probes (Red & Black)
+   ========================================================================== */
+.floating-probe {
+  position: absolute;
+  z-index: 66;
+  cursor: grab;
+  touch-action: none;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+  transform: translate(-50%, 0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.floating-probe:active {
+  cursor: grabbing;
+}
+
+/* Sharp Metallic Needle Pin Tip */
+.probe-pin {
+  width: 3.5px;
+  height: 20px;
+  background: linear-gradient(to right, #94a3b8, #f8fafc, #64748b);
+  border: 1px solid #475569;
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.probe-collar {
+  width: 14px;
+  height: 5px;
+  border-radius: 3px;
+  background: #334155;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.probe-handle {
+  width: 20px;
+  height: 48px;
+  border-radius: 5px 5px 8px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.3);
 }
 
 .probe-red .probe-handle {
-  background: #ef4444;
-  border: 1.5px solid #b91c1c;
-}
-.probe-red .probe-pin {
-  background: #fca5a5;
+  background: linear-gradient(to right, #dc2626, #ef4444, #b91c1c);
+  border: 1.5px solid #991b1b;
 }
 
 .probe-black .probe-handle {
-  background: #0f172a;
-  border: 1.5px solid #334155;
+  background: linear-gradient(to right, #1e293b, #334155, #0f172a);
+  border: 1.5px solid #020617;
 }
 
-.probe-sensor {
-  width: 36px;
-  height: 54px;
+.probe-sign {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
 }
-.probe-sensor .probe-handle {
+
+/* ==========================================================================
+   Iconic Contactless Crosshair Sensor Target Wand
+   ========================================================================== */
+.probe-crosshair-sensor {
+  width: 52px;
+  height: 94px;
+  transform: translate(-50%, -24px); /* Center crosshair circle on coordinate */
+}
+
+.sensor-target-ring {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3.5px dashed #0284c7;
+  background: rgba(56, 189, 248, 0.18);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(2, 132, 199, 0.35);
+  animation: pulseSensorRing 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes pulseSensorRing {
+  from { border-color: #0284c7; background: rgba(56, 189, 248, 0.15); }
+  to { border-color: #38bdf8; background: rgba(56, 189, 248, 0.32); }
+}
+
+.sensor-crosshair-v {
+  position: absolute;
+  width: 2px;
+  height: 28px;
   background: #0284c7;
-  border: 1.5px solid #0369a1;
-  width: 28px;
-  height: 36px;
 }
-.probe-pin-sensor {
-  width: 14px;
-  height: 16px;
-  border-radius: 8px 8px 0 0;
-  background: transparent;
-  border: 3.5px solid #0284c7;
-  border-bottom: none;
+
+.sensor-crosshair-h {
+  position: absolute;
+  height: 2px;
+  width: 28px;
+  background: #0284c7;
+}
+
+.sensor-target-dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  border: 1.5px solid #0284c7;
+}
+
+.sensor-wand-neck {
+  width: 6px;
+  height: 10px;
+  background: #475569;
+}
+
+.sensor-wand-handle {
+  width: 20px;
+  height: 36px;
+  background: linear-gradient(to right, #0369a1, #0284c7, #075985);
+  border: 1.5px solid #075985;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.5px;
 }
 
