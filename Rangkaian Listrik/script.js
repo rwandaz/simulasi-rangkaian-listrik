@@ -951,6 +951,7 @@
     }
 
     spawnComponentAt(type, cx, cy) {
+      this.hideScissors();
       const def = COMPONENT_DEFAULTS[type] || COMPONENT_DEFAULTS.wire;
       const len = def.defaultLen;
 
@@ -1172,7 +1173,8 @@
     }
 
     updateComponentActionsPosition() {
-      if (!this.selectedComponentId) {
+      // Jika gunting putus kabel sedang aktif atau tidak ada komponen yang dipilih, sembunyikan overlay aksi komponen agar tidak menumpuk
+      if (!this.selectedComponentId || this.activeJunctionVertexId || !this.scissorsContainer.classList.contains('hidden')) {
         this.compActionsContainer.classList.add('hidden');
         this.hideBatterySpec();
         return;
@@ -1459,9 +1461,31 @@
     showScissors(vertexId) {
       const v = this.vertices.get(vertexId);
       if (!v) return;
+
+      // 1. Matikan seleksi komponen & overlay tombol lain agar tidak pernah menumpuk
+      this.selectedComponentId = null;
+      if (this.compActionsContainer) {
+        this.compActionsContainer.classList.add('hidden');
+      }
+      this.hideBatterySpec();
+      this.updateSelectionToolbar();
+
+      // 2. Set junction aktif
       this.activeJunctionVertexId = vertexId;
       const sPos = this.worldToScreen(v.x, v.y);
-      this.scissorsContainer.style.left = `${sPos.x}px`;
+
+      // 3. Posisikan tombol putuskan kabel secara dinamis & bebas tabrakan batas layar
+      const isNearTop = sPos.y < 95;
+      if (isNearTop) {
+        this.scissorsContainer.style.transform = 'translate(-50%, 0)';
+        this.scissorsContainer.style.marginTop = '24px'; // Tampil di bawah titik sambungan jika dekat bilah atas
+      } else {
+        this.scissorsContainer.style.transform = 'translate(-50%, -100%)';
+        this.scissorsContainer.style.marginTop = '-24px'; // Tampil di atas titik sambungan
+      }
+
+      const clampedX = Math.max(35, Math.min(window.innerWidth - 35, sPos.x));
+      this.scissorsContainer.style.left = `${clampedX}px`;
       this.scissorsContainer.style.top = `${sPos.y}px`;
       this.scissorsContainer.classList.remove('hidden');
       this.render();
@@ -1479,6 +1503,13 @@
     // ==========================================================================
     startVertexDrag(vertexId, e) {
       e.stopPropagation();
+      this.hideScissors();
+      this.selectedComponentId = null;
+      if (this.compActionsContainer) {
+        this.compActionsContainer.classList.add('hidden');
+      }
+      this.hideBatterySpec();
+      this.updateSelectionToolbar();
       this.dragState = {
         mode: 'vertex',
         vertexId,
@@ -1741,11 +1772,14 @@
       this.dragState = null;
       this.render();
       this.updateSimulation();
-      this.updateComponentActionsPosition();
+      if (!this.activeJunctionVertexId && this.scissorsContainer.classList.contains('hidden')) {
+        this.updateComponentActionsPosition();
+      }
     }
 
     startMeterWidgetDrag(meterType, e) {
       e.stopPropagation();
+      this.hideScissors();
       this.dragState = {
         mode: 'drag_meter_widget',
         meterType,
@@ -1758,6 +1792,7 @@
 
     startProbeDrag(probeType, e) {
       e.stopPropagation();
+      this.hideScissors();
       let initPos;
       if (probeType === 'vm_red') initPos = this.vmProbeRedPos;
       else if (probeType === 'vm_black') initPos = this.vmProbeBlackPos;

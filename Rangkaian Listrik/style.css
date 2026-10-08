@@ -722,10 +722,10 @@ html, body {
    ========================================================================== */
 .junction-scissors {
   position: absolute;
-  z-index: 60;
+  z-index: 80; /* Prioritas tinggi agar tidak tertutup atau menumpuk dengan overlay lain */
   transform: translate(-50%, -100%);
-  margin-top: -22px; /* Jarak aman 22px di atas titik sambungan */
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  margin-top: -24px; /* Jarak aman 24px di atas titik sambungan */
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.28));
   animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
