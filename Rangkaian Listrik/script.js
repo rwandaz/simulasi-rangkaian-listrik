@@ -753,25 +753,16 @@
 
       // Right-side instruments dock elements
       const cardDockVm = document.getElementById('card-dock-vm');
-      const checkDockVm = document.getElementById('check-dock-vm');
       const cardDockAm = document.getElementById('card-dock-am');
-      const checkDockAm = document.getElementById('check-dock-am');
 
       if (btnToggleVm) {
         btnToggleVm.addEventListener('click', () => {
           this.toggleVoltmeter(!this.isVoltmeterActive);
         });
       }
-      if (checkDockVm) {
-        checkDockVm.addEventListener('change', () => {
-          this.toggleVoltmeter(checkDockVm.checked);
-        });
-      }
       if (cardDockVm) {
-        cardDockVm.addEventListener('click', (e) => {
-          if (e.target !== checkDockVm) {
-            this.toggleVoltmeter(!this.isVoltmeterActive);
-          }
+        cardDockVm.addEventListener('click', () => {
+          this.toggleVoltmeter(!this.isVoltmeterActive);
         });
       }
       if (btnCloseVm) {
@@ -786,16 +777,9 @@
           this.toggleAmmeter(!this.isAmmeterActive);
         });
       }
-      if (checkDockAm) {
-        checkDockAm.addEventListener('change', () => {
-          this.toggleAmmeter(checkDockAm.checked);
-        });
-      }
       if (cardDockAm) {
-        cardDockAm.addEventListener('click', (e) => {
-          if (e.target !== checkDockAm) {
-            this.toggleAmmeter(!this.isAmmeterActive);
-          }
+        cardDockAm.addEventListener('click', () => {
+          this.toggleAmmeter(!this.isAmmeterActive);
         });
       }
       if (btnCloseAm) {
@@ -1815,8 +1799,6 @@
       if (btnToggle) btnToggle.classList.toggle('active', this.isVoltmeterActive);
       const cardDock = document.getElementById('card-dock-vm');
       if (cardDock) cardDock.classList.toggle('active', this.isVoltmeterActive);
-      const checkDock = document.getElementById('check-dock-vm');
-      if (checkDock) checkDock.checked = this.isVoltmeterActive;
 
       if (this.floatingVoltmeter) this.floatingVoltmeter.classList.toggle('hidden', !this.isVoltmeterActive);
       if (this.vmProbeRed) this.vmProbeRed.classList.toggle('hidden', !this.isVoltmeterActive);
@@ -1838,8 +1820,6 @@
       if (btnToggle) btnToggle.classList.toggle('active', this.isAmmeterActive);
       const cardDock = document.getElementById('card-dock-am');
       if (cardDock) cardDock.classList.toggle('active', this.isAmmeterActive);
-      const checkDock = document.getElementById('check-dock-am');
-      if (checkDock) checkDock.checked = this.isAmmeterActive;
 
       if (this.floatingAmmeter) this.floatingAmmeter.classList.toggle('hidden', !this.isAmmeterActive);
       if (this.amProbeSensor) this.amProbeSensor.classList.toggle('hidden', !this.isAmmeterActive);

@@ -1435,6 +1435,16 @@ html, body {
 .dock-card.active {
   background: #e0f2fe;
   border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25);
+}
+
+.dock-card.active::after {
+  content: '✓';
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #0284c7;
+  margin-left: auto;
+  padding-right: 4px;
 }
 
 .dock-card-preview {
@@ -1469,13 +1479,6 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.dock-checkbox {
-  width: 17px;
-  height: 17px;
-  accent-color: #0284c7;
-  cursor: pointer;
 }
 
 /* ==========================================================================
