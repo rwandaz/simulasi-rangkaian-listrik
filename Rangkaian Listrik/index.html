@@ -130,9 +130,20 @@
     <main class="workspace-area">
       <!-- Toolbox / Component Drawer -->
       <aside class="component-tray" id="component-tray">
-        <div class="tray-header">
-          <span class="tray-title">📦 Kotak Alat</span>
-          <span class="tray-hint">Ketuk untuk mengambil</span>
+        <div class="tray-header" id="tray-header">
+          <div class="tray-header-text">
+            <span class="tray-title">📦 Kotak Alat</span>
+            <span class="tray-hint">Ketuk untuk mengambil</span>
+          </div>
+          <button id="btn-toggle-tray" class="tray-toggle-btn" title="Ciutkan / Perluas Kotak Alat" aria-label="Toggle Kotak Alat">
+            <span class="tray-toggle-icon">◀</span>
+          </button>
+        </div>
+        <!-- Mobile Drawer Handle Bar (Ketuk untuk sembunyikan/tampilkan di layar HP) -->
+        <div class="mobile-tray-handle-bar" id="mobile-tray-handle-bar" title="Ketuk untuk sembunyikan atau tampilkan kotak alat">
+          <div class="mobile-handle-pill"></div>
+          <span class="mobile-handle-text">📦 Kotak Alat</span>
+          <span class="mobile-handle-arrow">▾</span>
         </div>
         <div class="tray-items-scroller">
           <!-- 1. Kabel Fisik Mandiri -->
@@ -521,6 +532,13 @@
             ✖ Tutup
           </button>
         </div>
+
+        <!-- Floating Mobile Open-Tray Pill (Muncul saat kotak alat diciutkan di HP) -->
+        <button id="btn-mobile-open-tray" class="btn-mobile-open-tray hidden" title="Buka Kotak Alat" aria-label="Buka Kotak Alat">
+          <span class="open-tray-icon">📦</span>
+          <span class="open-tray-text">Kotak Alat</span>
+          <span class="open-tray-arrow">▴</span>
+        </button>
 
         <!-- Unified Workbench Bottom Bar (Zoom Controls + Batal/Undo + Bersihkan Papan) -->
         <div class="workbench-bottom-bar" id="workbench-bottom-bar">

@@ -270,6 +270,10 @@
       this.floatingAmmeter = document.getElementById('floating-ammeter');
       this.amProbeSensor = document.getElementById('am-probe-sensor');
       this.instrumentsDock = document.getElementById('instruments-dock');
+      this.componentTray = document.getElementById('component-tray');
+      this.btnToggleTray = document.getElementById('btn-toggle-tray');
+      this.mobileTrayHandleBar = document.getElementById('mobile-tray-handle-bar');
+      this.btnMobileOpenTray = document.getElementById('btn-mobile-open-tray');
 
       this.isVoltmeterActive = false;
       this.isAmmeterActive = false;
@@ -1027,6 +1031,49 @@
             this.updateSelectionToolbar();
             this.updateComponentActionsPosition();
             this.render();
+          }
+        }
+      });
+
+      // Tray Toggle Event Listeners (Desktop Collapse & Mobile Drawer)
+      if (this.btnToggleTray) {
+        this.btnToggleTray.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleComponentTray();
+        });
+      }
+      if (this.mobileTrayHandleBar) {
+        this.mobileTrayHandleBar.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleComponentTray();
+        });
+      }
+      if (this.btnMobileOpenTray) {
+        this.btnMobileOpenTray.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleComponentTray(false);
+        });
+      }
+
+      // Responsive Window Resize Handler
+      window.addEventListener('resize', () => {
+        if (this.isVoltmeterActive) this.ensureMeterInBounds('voltmeter');
+        if (this.isAmmeterActive) this.ensureMeterInBounds('ammeter');
+        this.updateMeterDOMPositions();
+        this.renderMeterWires();
+        if (this.selectedComponentId) {
+          this.updateComponentActionsPosition();
+        }
+        if (this.activeJunctionVertexId) {
+          this.showScissors(this.activeJunctionVertexId);
+        }
+        // Sync mobile open tray pill visibility
+        if (this.componentTray && this.btnMobileOpenTray) {
+          const isCollapsed = this.componentTray.classList.contains('collapsed');
+          if (window.innerWidth <= 768 && isCollapsed) {
+            this.btnMobileOpenTray.classList.remove('hidden');
+          } else {
+            this.btnMobileOpenTray.classList.add('hidden');
           }
         }
       });
@@ -2184,6 +2231,37 @@
         this.amProbeSensor.style.left = `${this.amProbeSensorPos.x}px`;
         this.amProbeSensor.style.top = `${this.amProbeSensorPos.y}px`;
       }
+    }
+
+    toggleComponentTray(forceState) {
+      if (!this.componentTray) return;
+      const isCollapsed = forceState !== undefined 
+        ? this.componentTray.classList.toggle('collapsed', forceState)
+        : this.componentTray.classList.toggle('collapsed');
+      
+      // Update desktop toggle icon & tooltip
+      if (this.btnToggleTray) {
+        const icon = this.btnToggleTray.querySelector('.tray-toggle-icon');
+        if (icon) {
+          icon.textContent = isCollapsed ? '▶' : '◀';
+        }
+        this.btnToggleTray.title = isCollapsed ? 'Perluas Kotak Alat' : 'Ciutkan Kotak Alat';
+      }
+
+      // Update mobile floating open-tray pill
+      if (this.btnMobileOpenTray) {
+        if (isCollapsed && window.innerWidth <= 768) {
+          this.btnMobileOpenTray.classList.remove('hidden');
+        } else {
+          this.btnMobileOpenTray.classList.add('hidden');
+        }
+      }
+
+      // Ensure meters & probes remain in-bounds after layout dimension change
+      if (this.isVoltmeterActive) this.ensureMeterInBounds('voltmeter');
+      if (this.isAmmeterActive) this.ensureMeterInBounds('ammeter');
+      this.updateMeterDOMPositions();
+      this.renderMeterWires();
     }
 
     renderMeterWires() {
