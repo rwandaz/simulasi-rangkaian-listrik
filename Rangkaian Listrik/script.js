@@ -427,6 +427,41 @@
         }
         if (trayDragState.hasMoved) {
           this.updateDragGhost(e.clientX, e.clientY);
+
+          // Tampilkan halo magnet jika melayang di dekat titik sambungan kanvas
+          const rect = this.workbench.getBoundingClientRect();
+          if (e.clientX >= rect.left && e.clientX <= rect.right &&
+              e.clientY >= rect.top && e.clientY <= rect.bottom) {
+            const worldPos = this.screenToWorld(e.clientX, e.clientY);
+            const def = COMPONENT_DEFAULTS[trayDragState.type] || COMPONENT_DEFAULTS.wire;
+            const len = def.defaultLen;
+            const x1 = worldPos.x - len / 2;
+            const y1 = worldPos.y;
+            const x2 = worldPos.x + len / 2;
+            const y2 = worldPos.y;
+
+            let candidate = null;
+            let minD = 38;
+            for (const [, v] of this.vertices) {
+              const d1 = Math.hypot(x1 - v.x, y1 - v.y);
+              const d2 = Math.hypot(x2 - v.x, y2 - v.y);
+              const dC = Math.hypot(worldPos.x - v.x, worldPos.y - v.y);
+              const dMin = Math.min(d1, d2, dC);
+              if (dMin < minD) {
+                minD = dMin;
+                candidate = v;
+              }
+            }
+            if (candidate) {
+              this.snapHalo.setAttribute('cx', candidate.x);
+              this.snapHalo.setAttribute('cy', candidate.y);
+              this.snapHalo.classList.remove('hidden');
+            } else {
+              this.snapHalo.classList.add('hidden');
+            }
+          } else {
+            this.snapHalo.classList.add('hidden');
+          }
         }
       });
 
@@ -436,6 +471,8 @@
           this.workbench.classList.remove('panning');
         }
 
+        this.snapHalo.classList.add('hidden');
+
         if (!trayDragState) return;
         if (trayDragState.hasMoved) {
           const rect = this.workbench.getBoundingClientRect();
@@ -444,7 +481,6 @@
             const worldPos = this.screenToWorld(e.clientX, e.clientY);
             this.spawnComponentAt(trayDragState.type, worldPos.x, worldPos.y);
             this.sound.playClick();
-            this.showToast('Komponen diletakkan di papan kerja! 🎯', 'normal');
           }
           this.hideDragGhost();
         } else {
@@ -912,16 +948,124 @@
       const def = COMPONENT_DEFAULTS[type] || COMPONENT_DEFAULTS.wire;
       const len = def.defaultLen;
 
-      const x1 = cx - len / 2;
-      const y1 = cy;
-      const x2 = cx + len / 2;
-      const y2 = cy;
+      let x1 = cx - len / 2;
+      let y1 = cy;
+      let x2 = cx + len / 2;
+      let y2 = cy;
 
+      const allVerts = Array.from(this.vertices.values());
+      let targetV1 = null;
+      let targetV2 = null;
+
+      // 1. Cek jika dilepaskan di celah antara dua titik terbuka (bridging antar titik)
+      if (allVerts.length >= 2) {
+        for (let i = 0; i < allVerts.length; i++) {
+          for (let j = i + 1; j < allVerts.length; j++) {
+            const va = allVerts[i];
+            const vb = allVerts[j];
+            const midX = (va.x + vb.x) / 2;
+            const midY = (va.y + vb.y) / 2;
+            const distToMid = Math.hypot(cx - midX, cy - midY);
+            const distBetween = Math.hypot(va.x - vb.x, va.y - vb.y);
+            // Jika dijatuhkan di sekitar garis tengah antara va dan vb
+            if (distToMid < 42 && (def.isFlexible || Math.abs(distBetween - len) < 45)) {
+              targetV1 = va;
+              targetV2 = vb;
+              break;
+            }
+          }
+          if (targetV1 && targetV2) break;
+        }
+      }
+
+      // 2. Cek apakah ujung x1/y1 atau x2/y2 berada di dekat titik yang sudah ada
+      if (!targetV1 || !targetV2) {
+        let minD1 = 36;
+        for (const v of allVerts) {
+          const d1 = Math.hypot(x1 - v.x, y1 - v.y);
+          const dC = Math.hypot(cx - v.x, cy - v.y);
+          if (d1 < minD1) {
+            minD1 = d1;
+            targetV1 = v;
+          } else if (dC < 26 && !targetV1) {
+            targetV1 = v;
+          }
+        }
+
+        let minD2 = 36;
+        for (const v of allVerts) {
+          if (targetV1 && v.id === targetV1.id) continue;
+          const d2 = Math.hypot(x2 - v.x, y2 - v.y);
+          if (d2 < minD2) {
+            minD2 = d2;
+            targetV2 = v;
+          }
+        }
+      }
+
+      // Kasus A: Menyambungkan LANGSUNG KEDUA TITIK sekaligus!
+      if (targetV1 && targetV2) {
+        x1 = targetV1.x;
+        y1 = targetV1.y;
+        x2 = targetV2.x;
+        y2 = targetV2.y;
+        const comp = this.spawnComponent(type, x1, y1, x2, y2);
+        this.mergeVertices(comp.v1Id, targetV1.id);
+        this.mergeVertices(comp.v2Id, targetV2.id);
+        this.selectedComponentId = comp.id;
+        this.sound.playSnap();
+        this.showToast('Komponen langsung menyambungkan kedua titik! 🧲', 'normal');
+        this.updateSelectionToolbar();
+        this.updateComponentActionsPosition();
+        this.render();
+        this.updateSimulation();
+        return comp;
+      }
+
+      // Kasus B: Menyambungkan ujung 1 ke titik targetV1
+      if (targetV1) {
+        x1 = targetV1.x;
+        y1 = targetV1.y;
+        x2 = x1 + len;
+        y2 = y1;
+        const comp = this.spawnComponent(type, x1, y1, x2, y2);
+        this.mergeVertices(comp.v1Id, targetV1.id);
+        this.selectedComponentId = comp.id;
+        this.sound.playSnap();
+        this.showToast('Komponen langsung tersambung ke titik! 🧲', 'normal');
+        this.updateSelectionToolbar();
+        this.updateComponentActionsPosition();
+        this.render();
+        this.updateSimulation();
+        return comp;
+      }
+
+      // Kasus C: Menyambungkan ujung 2 ke titik targetV2
+      if (targetV2) {
+        x2 = targetV2.x;
+        y2 = targetV2.y;
+        x1 = x2 - len;
+        y1 = y2;
+        const comp = this.spawnComponent(type, x1, y1, x2, y2);
+        this.mergeVertices(comp.v2Id, targetV2.id);
+        this.selectedComponentId = comp.id;
+        this.sound.playSnap();
+        this.showToast('Komponen langsung tersambung ke titik! 🧲', 'normal');
+        this.updateSelectionToolbar();
+        this.updateComponentActionsPosition();
+        this.render();
+        this.updateSimulation();
+        return comp;
+      }
+
+      // Kasus D: Peletakan bebas standar
       const comp = this.spawnComponent(type, x1, y1, x2, y2);
       this.selectedComponentId = comp.id;
+      this.showToast('Komponen diletakkan di papan kerja! 🎯', 'normal');
       this.updateSelectionToolbar();
       this.updateComponentActionsPosition();
       this.render();
+      this.updateSimulation();
       return comp;
     }
 
@@ -1041,16 +1185,24 @@
       const dx = v2.x - v1.x;
       const dy = v2.y - v1.y;
 
-      // Jarak setengah tinggi petak sorotan (selection-halo) di koordinat dunia
-      let haloHalfH = 26;
-      if (comp.type === 'bulb') {
-        haloHalfH = 48; // Kubah lampu kaca tinggi
-      } else if (comp.type === 'battery' || comp.type === 'solar' || comp.type === 'dinamo') {
-        haloHalfH = 42;
+      // Jarak tinggi petak sorotan (selection-halo) di koordinat dunia
+      let haloTop = 26;
+      let haloBottom = 26;
+      if (comp.type === 'dinamo') {
+        haloTop = 64; // Baling-baling menghadap ke atas bebas hambatan
+        haloBottom = 26;
+      } else if (comp.type === 'bulb') {
+        haloTop = 48; // Kubah lampu kaca tinggi
+        haloBottom = 26;
+      } else if (comp.type === 'battery' || comp.type === 'solar') {
+        haloTop = 40;
+        haloBottom = 40;
       } else if (comp.type === 'resistor' || comp.type === 'switch' || comp.type === 'iron_nail' || comp.type === 'gold_coin' || comp.type === 'eraser' || comp.type === 'ruler') {
-        haloHalfH = 32;
+        haloTop = 32;
+        haloBottom = 32;
       } else if (comp.type === 'voltmeter' || comp.type === 'ammeter') {
-        haloHalfH = 34;
+        haloTop = 34;
+        haloBottom = 34;
       }
 
       // Vektor satuan sepanjang dan tegak lurus komponen
@@ -1063,10 +1215,10 @@
       // 4 sudut petak sorotan (selection-halo bounding box) di koordinat dunia
       const pad = 12;
       const corners = [
-        { x: v1.x - ux * pad - nx * haloHalfH, y: v1.y - uy * pad - ny * haloHalfH },
-        { x: v1.x - ux * pad + nx * haloHalfH, y: v1.y - uy * pad + ny * haloHalfH },
-        { x: v2.x + ux * pad - nx * haloHalfH, y: v2.y + uy * pad - ny * haloHalfH },
-        { x: v2.x + ux * pad + nx * haloHalfH, y: v2.y + uy * pad + ny * haloHalfH }
+        { x: v1.x - ux * pad - nx * haloTop, y: v1.y - uy * pad - ny * haloTop },
+        { x: v1.x - ux * pad + nx * haloBottom, y: v1.y - uy * pad + ny * haloBottom },
+        { x: v2.x + ux * pad - nx * haloTop, y: v2.y + uy * pad - ny * haloTop },
+        { x: v2.x + ux * pad + nx * haloBottom, y: v2.y + uy * pad - ny * haloBottom }
       ];
 
       // Konversikan keempat sudut ke koordinat layar
@@ -1485,6 +1637,38 @@
         v2.x = Math.round(this.dragState.v2Initial.x + dxWorld);
         v2.y = Math.round(this.dragState.v2Initial.y + dyWorld);
 
+        // Deteksi kandidat magnetik snap saat menggeser badan komponen
+        let snapCandidate1 = null;
+        let snapCandidate2 = null;
+        let minD1 = SNAP_DISTANCE + 6;
+        let minD2 = SNAP_DISTANCE + 6;
+
+        for (const [vId, v] of this.vertices) {
+          if (vId === comp.v1Id || vId === comp.v2Id) continue;
+          const d1 = Math.hypot(v1.x - v.x, v1.y - v.y);
+          if (d1 < minD1) {
+            minD1 = d1;
+            snapCandidate1 = v;
+          }
+          const d2 = Math.hypot(v2.x - v.x, v2.y - v.y);
+          if (d2 < minD2) {
+            minD2 = d2;
+            snapCandidate2 = v;
+          }
+        }
+
+        this.dragState.snapV1Id = snapCandidate1 ? snapCandidate1.id : null;
+        this.dragState.snapV2Id = snapCandidate2 ? snapCandidate2.id : null;
+
+        if (snapCandidate1 || snapCandidate2) {
+          const haloTarget = snapCandidate1 || snapCandidate2;
+          this.snapHalo.setAttribute('cx', haloTarget.x);
+          this.snapHalo.setAttribute('cy', haloTarget.y);
+          this.snapHalo.classList.remove('hidden');
+        } else {
+          this.snapHalo.classList.add('hidden');
+        }
+
         this.updateComponentActionsPosition();
         this.render();
       }
@@ -1497,6 +1681,29 @@
         this.updateMeterReadouts();
         this.dragState = null;
         return;
+      }
+
+      if (this.dragState.mode === 'body') {
+        this.snapHalo.classList.add('hidden');
+        const comp = this.components.find(c => c.id === this.dragState.compId);
+        if (comp) {
+          let mergedCount = 0;
+          if (this.dragState.snapV1Id) {
+            this.mergeVertices(comp.v1Id, this.dragState.snapV1Id);
+            mergedCount++;
+          }
+          if (this.dragState.snapV2Id) {
+            this.mergeVertices(comp.v2Id, this.dragState.snapV2Id);
+            mergedCount++;
+          }
+          if (mergedCount === 2) {
+            this.sound.playSnap();
+            this.showToast('Komponen langsung menyambungkan kedua titik! 🧲', 'normal');
+          } else if (mergedCount === 1) {
+            this.sound.playSnap();
+            this.showToast('Komponen langsung tersambung ke titik! 🧲', 'normal');
+          }
+        }
       }
 
       if (this.dragState.mode === 'vertex') {
@@ -2350,60 +2557,60 @@
           <rect x="${len - 16}" y="-8" width="4" height="16" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1" rx="1" />
         `;
       } else if (comp.type === 'dinamo') {
-        // Dinamo Motor DC (Stator Silinder Logam, Poros As Baja & Baling-Baling Kipas Berputar)
-        const propCenter = len * 0.76;
+        // Dinamo Motor DC (Stator Silinder Logam, Poros As Vertikal Menghadap ke Atas & Baling-Baling Kipas Bebas Hambatan)
+        const cx = len / 2;
+        const propHubX = cx;
+        const propHubY = -34;
         return `
           ${isSelected ? `
             <g class="selection-highlight">
-              <rect x="-6" y="-38" width="${len + 12}" height="76" rx="12" class="selection-halo" />
-              <circle cx="-6" cy="-38" r="3.5" class="selection-corner" />
-              <circle cx="${len + 6}" cy="-38" r="3.5" class="selection-corner" />
-              <circle cx="-6" cy="38" r="3.5" class="selection-corner" />
-              <circle cx="${len + 6}" cy="38" r="3.5" class="selection-corner" />
+              <rect x="-6" y="-62" width="${len + 12}" height="86" rx="12" class="selection-halo" />
+              <circle cx="-6" cy="-62" r="3.5" class="selection-corner" />
+              <circle cx="${len + 6}" cy="-62" r="3.5" class="selection-corner" />
+              <circle cx="-6" cy="24" r="3.5" class="selection-corner" />
+              <circle cx="${len + 6}" cy="24" r="3.5" class="selection-corner" />
             </g>
           ` : ''}
           <line x1="0" y1="0" x2="${len}" y2="0" class="component-body-outline" stroke="transparent" stroke-width="44" />
-          <!-- Terminal (-) Kiri -->
-          <line x1="0" y1="0" x2="16" y2="0" stroke="#64748b" stroke-width="5" />
-          <rect x="10" y="-7" width="7" height="14" fill="#94a3b8" rx="2" stroke="#475569" stroke-width="1" />
-          <text x="13.5" y="0" font-family="'Fredoka', sans-serif" font-size="11" font-weight="900" fill="#1e293b" text-anchor="middle" dominant-baseline="central">−</text>
 
-          <!-- Bearing Belakang / Tutup Stator -->
-          <rect x="16" y="-15" width="6" height="30" fill="#1e293b" stroke="#0f172a" stroke-width="1.5" rx="2" />
+          <!-- Terminal (-) Kiri (Terbuka dan Bebas Hambatan) -->
+          <line x1="0" y1="0" x2="${cx - 24}" y2="0" stroke="#64748b" stroke-width="4.5" />
+          <rect x="8" y="-7" width="8" height="14" fill="#94a3b8" rx="2" stroke="#475569" stroke-width="1" />
+          <text x="12" y="0" font-family="'Fredoka', sans-serif" font-size="11" font-weight="900" fill="#1e293b" text-anchor="middle" dominant-baseline="central">−</text>
 
-          <!-- Badan Silinder Motor DC Logam -->
-          <rect x="22" y="-18" width="46" height="36" fill="#334155" stroke="#0f172a" stroke-width="2" rx="4" />
-          <!-- Garis Strip Aksen Dinamo Biru Elektrik -->
-          <rect x="27" y="-18" width="8" height="36" fill="#0284c7" />
-          <!-- Slot Ventilasi & Detil Brush -->
-          <line x1="24" y1="-8" x2="65" y2="-8" stroke="#475569" stroke-width="1.5" stroke-dasharray="5 3" />
-          <line x1="24" y1="8" x2="65" y2="8" stroke="#475569" stroke-width="1.5" stroke-dasharray="5 3" />
-          <text x="47" y="1" font-family="'Fredoka', sans-serif" font-size="8.5" font-weight="800" fill="#f8fafc" text-anchor="middle" dominant-baseline="central">DINAMO DC</text>
+          <!-- Badan Silinder Motor DC Logam (Simetris di Tengah) -->
+          <rect x="${cx - 25}" y="-16" width="50" height="32" fill="#334155" stroke="#0f172a" stroke-width="2" rx="4" />
+          <!-- Strip Aksen Biru Elektrik -->
+          <rect x="${cx - 21}" y="-16" width="7" height="32" fill="#0284c7" />
+          <!-- Detil Ventilasi & Brush -->
+          <line x1="${cx - 10}" y1="-7" x2="${cx + 20}" y2="-7" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 2" />
+          <line x1="${cx - 10}" y1="7" x2="${cx + 20}" y2="7" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 2" />
+          <text x="${cx + 4}" y="0.5" font-family="'Fredoka', sans-serif" font-size="8.5" font-weight="800" fill="#f8fafc" text-anchor="middle" dominant-baseline="central">DINAMO DC</text>
 
-          <!-- Tutup Depan Stator & As Baja -->
-          <rect x="68" y="-12" width="6" height="24" fill="#1e293b" stroke="#0f172a" stroke-width="1.5" rx="2" />
-          <rect x="74" y="-3.5" width="10" height="7" fill="#94a3b8" stroke="#475569" stroke-width="1" />
-          <line x1="75" y1="-1" x2="83" y2="-1" stroke="#f1f5f9" stroke-width="1.2" />
+          <!-- Poros As Vertikal Menghadap ke Atas -->
+          <rect x="${cx - 6}" y="-20" width="12" height="6" fill="#1e293b" stroke="#0f172a" stroke-width="1" rx="1" />
+          <rect x="${cx - 3}" y="-34" width="6" height="15" fill="#94a3b8" stroke="#475569" stroke-width="1" />
+          <line x1="${cx - 1}" y1="-33" x2="${cx - 1}" y2="-20" stroke="#f1f5f9" stroke-width="1" />
 
-          <!-- Terminal (+) Kanan -->
-          <line x1="${len - 16}" y1="0" x2="${len}" y2="0" stroke="#64748b" stroke-width="5" />
-          <rect x="${len - 17}" y="-7" width="7" height="14" fill="#ef4444" rx="2" stroke="#dc2626" stroke-width="1" />
-          <text x="${len - 13.5}" y="0" font-family="'Fredoka', sans-serif" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">+</text>
+          <!-- Terminal (+) Kanan (Terbuka dan Bebas Hambatan) -->
+          <line x1="${cx + 25}" y1="0" x2="${len}" y2="0" stroke="#64748b" stroke-width="4.5" />
+          <rect x="${len - 16}" y="-7" width="8" height="14" fill="#ef4444" rx="2" stroke="#dc2626" stroke-width="1" />
+          <text x="${len - 12}" y="0" font-family="'Fredoka', sans-serif" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">+</text>
 
-          <!-- Baling-Baling Dinamo 3 Daun Berputar -->
-          <g id="dinamo-prop-${comp.id}" transform="rotate(${comp.spinAngle || 0}, ${propCenter}, 0)">
+          <!-- Baling-Baling Dinamo 3 Daun Berputar Menghadap ke Atas -->
+          <g id="dinamo-prop-${comp.id}" transform="rotate(${comp.spinAngle || 0}, ${propHubX}, ${propHubY})">
             <!-- Daun Baling 1 -->
-            <path d="M ${propCenter} 0 C ${propCenter - 8} -14 ${propCenter - 10} -28 ${propCenter} -34 C ${propCenter + 10} -28 ${propCenter + 8} -14 ${propCenter} 0" fill="#06b6d4" stroke="#0891b2" stroke-width="1.2" />
-            <line x1="${propCenter}" y1="0" x2="${propCenter}" y2="-28" stroke="#a5f3fc" stroke-width="1" opacity="0.75" />
+            <path d="M ${propHubX} ${propHubY} C ${propHubX - 7} ${propHubY - 10} ${propHubX - 8} ${propHubY - 20} ${propHubX} ${propHubY - 25} C ${propHubX + 8} ${propHubY - 20} ${propHubX + 7} ${propHubY - 10} ${propHubX} ${propHubY}" fill="#06b6d4" stroke="#0891b2" stroke-width="1.2" />
+            <line x1="${propHubX}" y1="${propHubY}" x2="${propHubX}" y2="${propHubY - 21}" stroke="#a5f3fc" stroke-width="1" opacity="0.75" />
             <!-- Daun Baling 2 (Rotasi 120°) -->
-            <path d="M ${propCenter} 0 C ${propCenter - 8} -14 ${propCenter - 10} -28 ${propCenter} -34 C ${propCenter + 10} -28 ${propCenter + 8} -14 ${propCenter} 0" transform="rotate(120, ${propCenter}, 0)" fill="#06b6d4" stroke="#0891b2" stroke-width="1.2" />
-            <line x1="${propCenter}" y1="0" x2="${propCenter}" y2="-28" transform="rotate(120, ${propCenter}, 0)" stroke="#a5f3fc" stroke-width="1" opacity="0.75" />
+            <path d="M ${propHubX} ${propHubY} C ${propHubX - 7} ${propHubY - 10} ${propHubX - 8} ${propHubY - 20} ${propHubX} ${propHubY - 25} C ${propHubX + 8} ${propHubY - 20} ${propHubX + 7} ${propHubY - 10} ${propHubX} ${propHubY}" transform="rotate(120, ${propHubX}, ${propHubY})" fill="#06b6d4" stroke="#0891b2" stroke-width="1.2" />
+            <line x1="${propHubX}" y1="${propHubY}" x2="${propHubX}" y2="${propHubY - 21}" transform="rotate(120, ${propHubX}, ${propHubY})" stroke="#a5f3fc" stroke-width="1" opacity="0.75" />
             <!-- Daun Baling 3 (Rotasi 240°) -->
-            <path d="M ${propCenter} 0 C ${propCenter - 8} -14 ${propCenter - 10} -28 ${propCenter} -34 C ${propCenter + 10} -28 ${propCenter + 8} -14 ${propCenter} 0" transform="rotate(240, ${propCenter}, 0)" fill="#06b6d4" stroke="#0891b2" stroke-width="1.2" />
-            <line x1="${propCenter}" y1="0" x2="${propCenter}" y2="-28" transform="rotate(240, ${propCenter}, 0)" stroke="#a5f3fc" stroke-width="1" opacity="0.75" />
+            <path d="M ${propHubX} ${propHubY} C ${propHubX - 7} ${propHubY - 10} ${propHubX - 8} ${propHubY - 20} ${propHubX} ${propHubY - 25} C ${propHubX + 8} ${propHubY - 20} ${propHubX + 7} ${propHubY - 10} ${propHubX} ${propHubY}" transform="rotate(240, ${propHubX}, ${propHubY})" fill="#06b6d4" stroke="#0891b2" stroke-width="1.2" />
+            <line x1="${propHubX}" y1="${propHubY}" x2="${propHubX}" y2="${propHubY - 21}" transform="rotate(240, ${propHubX}, ${propHubY})" stroke="#a5f3fc" stroke-width="1" opacity="0.75" />
             <!-- Hub Center Nose Cone -->
-            <circle cx="${propCenter}" cy="0" r="6.5" fill="#f8fafc" stroke="#0284c7" stroke-width="2" />
-            <circle cx="${propCenter}" cy="0" r="3" fill="#0284c7" />
+            <circle cx="${propHubX}" cy="${propHubY}" r="5.5" fill="#f8fafc" stroke="#0284c7" stroke-width="2" />
+            <circle cx="${propHubX}" cy="${propHubY}" r="2.5" fill="#0284c7" />
           </g>
         `;
       } else if (comp.type === 'solar') {
@@ -2583,8 +2790,9 @@
               const propGroup = document.getElementById(`dinamo-prop-${c.id}`);
               if (propGroup) {
                 const len = c.def ? c.def.defaultLen : 110;
-                const propCenter = len * 0.76;
-                propGroup.setAttribute('transform', `rotate(${c.spinAngle}, ${propCenter}, 0)`);
+                const propHubX = len / 2;
+                const propHubY = -34;
+                propGroup.setAttribute('transform', `rotate(${c.spinAngle}, ${propHubX}, ${propHubY})`);
               }
             }
           });

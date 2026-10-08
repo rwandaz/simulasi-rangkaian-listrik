@@ -10,7 +10,9 @@ Aplikasi web interaktif simulasi rangkaian listrik untuk siswa Sekolah Dasar (SD
    - **Kabel Fisik di Kotak Alat:** Siswa dapat mengambil kabel sebanyak mungkin, memanjangkannya, memendekkannya, dan menggesernya secara leluasa.
    - **Komponen Kaku (Rigid):** Panjang komponen (baterai, lampu, saklar, mistar, dll.) tetap konsisten dan tidak melar saat ditarik.
    - **Rotasi Presisi 90 Derajat:** Dilengkapi tombol rotasi berikon `🔄` dengan jarak aman agar tidak menutupi komponen.
-   - **Sistem Magnet (*Snap & Merge*):** Ujung lingkaran merah komponen otomatis menempel (*"KLEK!"*) menjadi **1 titik sambungan hitam (*junction*)** saat didekatkan.
+   - **Sistem Magnet (*Snap & Merge*) & Sambungan Otomatis Saat Drag & Drop:**
+     - Saat menarik komponen dari kotak alat maupun menggeser badan komponen, komponen otomatis mendeteksi titik terdekat dengan halo magnet dan langsung tersambung (*"KLEK!"*).
+     - Jika diletakkan di celah antara dua titik (*gap bridging*), komponen langsung menyambungkan **kedua titik sekaligus** menjadi sirkuit tertutup.
    - **Alat Gunting di Titik Sambung (Scissors):** Mengklik titik sambungan memunculkan tombol **✂️ Gunting** berjarak aman untuk memisahkan komponen kembali.
    - **Memulai dengan Kanvas Bersih (Empty Canvas on Startup):** Aplikasi langsung menyambut siswa dengan papan kerja bersih dan kosong, siap untuk kreasi bebas tanpa komponen bawaan yang menghalangi.
    - **Layar Pemuatan Edukatif (App Loading Screen):** Dilengkapi animasi pemuatan modern berupa atom listrik berputar, orbit partikel, progress bar interaktif, dan transisi fade-out halus saat aplikasi siap digunakan.
@@ -29,7 +31,7 @@ Aplikasi web interaktif simulasi rangkaian listrik untuk siswa Sekolah Dasar (SD
      - Tombol **🗑️ Bersihkan Papan** yang menyatu rapi dan langsung merespon klik/sentuhan seketika tanpa terhalang SVG kanvas.
    - **Baterai (Dapat Diatur):** Tombol `⚡` khusus muncul saat baterai dipilih untuk mengatur tegangan (0–24V). Kutub (+) dan (−) ditandai dengan jelas.
    - **Panel Surya Fotovoltaik:** Sumber daya energi terbarukan ramah lingkungan dengan kisi busbar sel silikon dan pengaturan tegangan (0–24V).
-   - **Dinamo Motor DC:** Beban motor listrik dengan baling-baling 3 daun yang berputar secara otomatis dan dinamis sesuai tegangan listrik!
+   - **Dinamo Motor DC (Baling-Baling Menghadap ke Atas):** Desain ergonomis dengan poros vertikal di mana baling-baling 3 daun berputar menghadap ke atas (*upward-facing propeller*). Kedua titik terminal (− dan +) di kiri dan kanan sepenuhnya terbuka, bersih, dan bebas hambatan sehingga kabel sangat mudah dipasang!
    - **Bohlam Pijar:** Radiasi cahaya dan pendar kuning saat dialiri arus listrik.
    - **Saklar Pisau:** Tuas mekanik klik ON/OFF dengan indikator status.
    - **Benda Uji Realistis:** Paku Besi baja & Koin Emas logam berigi (Konduktor), Penghapus karet dual-tone & Mistar bergaris ukuran cm nyata (Isolator).
