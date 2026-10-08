@@ -12,10 +12,16 @@ Aplikasi web interaktif simulasi rangkaian listrik untuk siswa Sekolah Dasar (SD
    - **Rotasi Presisi 90 Derajat:** Dilengkapi tombol rotasi berikon `🔄` dengan jarak aman agar tidak menutupi komponen.
    - **Sistem Magnet (*Snap & Merge*):** Ujung lingkaran merah komponen otomatis menempel (*"KLEK!"*) menjadi **1 titik sambungan hitam (*junction*)** saat didekatkan.
    - **Alat Gunting di Titik Sambung (Scissors):** Mengklik titik sambungan memunculkan tombol **✂️ Gunting** berjarak aman untuk memisahkan komponen kembali.
-   - **Pilihan Aliran Listrik (Elektron vs Arus):** Pilihan eksklusif antara **Aliran Elektron** (− ke +) atau **Arus Konvensional** (+ ke −).
+   - **Pilihan Aliran Listrik (Elektron vs Arus vs Nonaktif/Mati):** Pilihan fleksibel antara **Aliran Elektron** (− ke +), **Arus Konvensional** (+ ke −), atau **Nonaktifkan Semua (Mati 🚫)** untuk mematikan seluruh animasi partikel.
    - **Kontrol Zoom Kanvas:** Fitur zoom in (`➕`), zoom out (`➖`), reset (`100%`), scroll mouse, dan gestur cubit dua jari (pinch gesture) pada layar sentuh.
 
 2. **Komponen Visual & Fisika Realistis:**
+   - **Alat Ukur Voltmeter Digital:**
+     - **Voltmeter Portabel:** Dilengkapi probe kabel merah (+) dan probe hitam (−) yang dapat digeser bebas untuk mengukur beda potensial antar titik sambungan secara akurat.
+     - **Voltmeter Rangkaian:** Komponen voltmeter dalam kotak alat yang dapat dipasang paralel di sirkuit untuk membaca voltase secara langsung.
+   - **Alat Ukur Amperemeter Digital:**
+     - **Amperemeter Sensor Contactless:** Dilengkapi sensor penjepit portabel yang dapat didekatkan ke kabel atau komponen untuk mengukur kuat arus (Ampere) tanpa harus memutus kabel.
+     - **Amperemeter Rangkaian:** Komponen amperemeter dalam kotak alat yang dipasang seri di dalam sirkuit dengan layar LCD hijau menyala.
    - **Baterai (Dapat Diatur):** Tombol `⚡` khusus muncul saat baterai dipilih untuk mengatur tegangan (0–24V). Kutub (+) dan (−) ditandai dengan jelas.
    - **Panel Surya Fotovoltaik:** Sumber daya energi terbarukan ramah lingkungan dengan kisi busbar sel silikon dan pengaturan tegangan (0–24V).
    - **Dinamo Motor DC:** Beban motor listrik dengan baling-baling 3 daun yang berputar secara otomatis dan dinamis sesuai tegangan listrik!

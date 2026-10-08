@@ -36,7 +36,7 @@
 
       <!-- Header Controls -->
       <div class="header-actions">
-        <!-- Flow Mode Switcher: Elektron vs Arus (hanya salah satu yang aktif) -->
+        <!-- Flow Mode Switcher: Elektron vs Arus vs Mati -->
         <div class="flow-switcher" title="Pilihan Visualisasi Aliran Listrik">
           <button id="btn-flow-electrons" class="flow-btn active" title="Aliran Elektron (Kutub − ke +)">
             <span class="flow-icon">⊖</span>
@@ -45,6 +45,22 @@
           <button id="btn-flow-current" class="flow-btn" title="Arus Listrik Konvensional (Kutub + ke −)">
             <span class="flow-icon">➔</span>
             <span class="flow-text">Arus</span>
+          </button>
+          <button id="btn-flow-off" class="flow-btn" title="Nonaktifkan Aliran Listrik (Tanpa Partikel)">
+            <span class="flow-icon">🚫</span>
+            <span class="flow-text">Mati</span>
+          </button>
+        </div>
+
+        <!-- Toggle Alat Ukur Portabel (Voltmeter & Amperemeter Probes) -->
+        <div class="meter-tools-bar" title="Alat Ukur Listrik Interaktif">
+          <button id="btn-toggle-voltmeter" class="meter-btn" title="Buka/Tutup Voltmeter Probe Portabel">
+            <span class="meter-btn-icon">📟</span>
+            <span class="meter-btn-text">Voltmeter</span>
+          </button>
+          <button id="btn-toggle-ammeter" class="meter-btn" title="Buka/Tutup Amperemeter Probe Portabel">
+            <span class="meter-btn-icon">🎛️</span>
+            <span class="meter-btn-text">Amperemeter</span>
           </button>
         </div>
 
@@ -205,6 +221,30 @@
             </div>
             <span class="item-name">Panel Surya</span>
           </div>
+
+          <!-- 11. Amperemeter (Pengukur Kuat Arus Seri) -->
+          <div class="tray-item" data-type="ammeter" title="Amperemeter Digital (Dipasang Seri)">
+            <div class="item-preview item-obj">
+              <svg width="44" height="24" viewBox="0 0 44 24">
+                <rect x="3" y="3" width="38" height="18" rx="3" fill="#0f172a" stroke="#0284c7" stroke-width="1.5" />
+                <rect x="9" y="6" width="26" height="12" rx="1.5" fill="#064e3b" />
+                <text x="22" y="15" font-family="'Fredoka', sans-serif" font-size="8" font-weight="900" fill="#4ade80" text-anchor="middle">0.00A</text>
+              </svg>
+            </div>
+            <span class="item-name">Amperemeter</span>
+          </div>
+
+          <!-- 12. Voltmeter (Pengukur Beda Potensial Paralel) -->
+          <div class="tray-item" data-type="voltmeter" title="Voltmeter Digital (Dipasang Paralel)">
+            <div class="item-preview item-obj">
+              <svg width="44" height="24" viewBox="0 0 44 24">
+                <rect x="3" y="3" width="38" height="18" rx="3" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" />
+                <rect x="9" y="6" width="26" height="12" rx="1.5" fill="#451a03" />
+                <text x="22" y="15" font-family="'Fredoka', sans-serif" font-size="8" font-weight="900" fill="#fef08a" text-anchor="middle">0.00V</text>
+              </svg>
+            </div>
+            <span class="item-name">Voltmeter</span>
+          </div>
         </div>
       </aside>
 
@@ -250,6 +290,9 @@
 
             <!-- Magnetic Snap Target Halo -->
             <circle id="snap-halo" class="snap-halo hidden" r="24" cx="0" cy="0"></circle>
+
+            <!-- Flexible Meter Probe Leads Layer (Voltmeter & Ammeter Wires) -->
+            <g id="meter-wires-group"></g>
           </g>
         </svg>
 
@@ -301,6 +344,55 @@
               <span>24V</span>
             </div>
           </div>
+        </div>
+
+        <!-- Floating Voltmeter Tool (Multimeter Digital Portabel dengan Probe Merah & Hitam) -->
+        <div id="floating-voltmeter" class="floating-meter-widget hidden">
+          <div class="meter-head" id="vm-drag-handle">
+            <span class="meter-icon">📟</span>
+            <span class="meter-title">VOLTMETER</span>
+            <button class="meter-close" id="btn-close-vm" title="Tutup Voltmeter">✖</button>
+          </div>
+          <div class="meter-lcd">
+            <span class="lcd-value" id="vm-lcd-val">0.00</span>
+            <span class="lcd-unit">V</span>
+          </div>
+          <div class="meter-legend">
+            <span class="legend-red">🔴 Probe (+)</span>
+            <span class="legend-black">⚫ Probe (−)</span>
+          </div>
+        </div>
+
+        <!-- Floating Voltmeter Probe Leads (Ujung Kabel Sensor Voltmeter) -->
+        <div id="vm-probe-red" class="floating-probe probe-red hidden" title="Geser Probe Merah (+) ke titik rangkaian">
+          <div class="probe-pin"></div>
+          <div class="probe-handle">+</div>
+        </div>
+        <div id="vm-probe-black" class="floating-probe probe-black hidden" title="Geser Probe Hitam (−) ke titik rangkaian">
+          <div class="probe-pin"></div>
+          <div class="probe-handle">−</div>
+        </div>
+
+        <!-- Floating Amperemeter Tool (Alat Pengukur Arus Cabang Portabel) -->
+        <div id="floating-ammeter" class="floating-meter-widget hidden">
+          <div class="meter-head" id="am-drag-handle">
+            <span class="meter-icon">🎛️</span>
+            <span class="meter-title">AMPEREMETER</span>
+            <button class="meter-close" id="btn-close-am" title="Tutup Amperemeter">✖</button>
+          </div>
+          <div class="meter-lcd ammeter-lcd">
+            <span class="lcd-value" id="am-lcd-val">0.00</span>
+            <span class="lcd-unit">A</span>
+          </div>
+          <div class="meter-legend">
+            <span class="legend-blue">📍 Sensor Arus Cabang</span>
+          </div>
+        </div>
+
+        <!-- Floating Ammeter Sensor Clamp/Probe -->
+        <div id="am-probe-sensor" class="floating-probe probe-sensor hidden" title="Geser Sensor Amperemeter ke atas kabel atau komponen">
+          <div class="probe-pin probe-pin-sensor"></div>
+          <div class="probe-handle probe-handle-sensor">A</div>
         </div>
 
         <!-- Floating Selection Toolbar (Shows selected component info and actions) -->

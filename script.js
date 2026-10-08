@@ -156,7 +156,9 @@
     eraser: { title: 'Penghapus', defaultLen: 95, isFlexible: false, isConductor: false, icon: '🧹' },
     ruler: { title: 'Penggaris', defaultLen: 110, isFlexible: false, isConductor: false, icon: '📏' },
     dinamo: { title: 'Dinamo Motor', defaultLen: 110, isFlexible: false, isConductor: true, isLoad: true, icon: '⚙️' },
-    solar: { title: 'Panel Surya', defaultLen: 125, isFlexible: false, isSource: true, icon: '☀️' }
+    solar: { title: 'Panel Surya', defaultLen: 125, isFlexible: false, isSource: true, icon: '☀️' },
+    ammeter: { title: 'Amperemeter', defaultLen: 100, isFlexible: false, isConductor: true, icon: '🎛️' },
+    voltmeter: { title: 'Voltmeter', defaultLen: 100, isFlexible: false, isConductor: true, icon: '📟' }
   };
 
   const MISSIONS = [
@@ -234,7 +236,7 @@
       this.components = []; // Array of component segment objects
       this.selectedComponentId = null;
       this.activeJunctionVertexId = null; // Vertex showing scissors tool
-      this.flowMode = 'electrons'; // 'electrons' | 'current' (hanya salah satu yang aktif)
+      this.flowMode = 'electrons'; // 'electrons' | 'current' | 'none'
       this.circuitVoltage = 1.5;
       this.currentMode = 'sandbox';
       this.currentMissionIdx = 0;
@@ -258,6 +260,27 @@
       this.statusIcon = document.getElementById('status-icon');
       this.fxOverlay = document.getElementById('fx-overlay');
       this.zoomLevelDisplay = document.getElementById('zoom-level-display');
+
+      // Floating Meter Tools Elements
+      this.meterWiresGroup = document.getElementById('meter-wires-group');
+      this.floatingVoltmeter = document.getElementById('floating-voltmeter');
+      this.vmProbeRed = document.getElementById('vm-probe-red');
+      this.vmProbeBlack = document.getElementById('vm-probe-black');
+      this.floatingAmmeter = document.getElementById('floating-ammeter');
+      this.amProbeSensor = document.getElementById('am-probe-sensor');
+
+      this.isVoltmeterActive = false;
+      this.isAmmeterActive = false;
+
+      // Positions in workbench container pixel coords
+      this.voltmeterPos = { x: 100, y: 55 };
+      this.vmProbeRedPos = { x: 190, y: 190 };
+      this.vmProbeBlackPos = { x: 65, y: 190 };
+
+      this.ammeterPos = { x: 300, y: 55 };
+      this.amProbeSensorPos = { x: 350, y: 190 };
+
+      this.vertexPotentials = new Map(); // vId -> volts
 
       // Interaction Drag & Zoom/Pan State
       this.dragState = null;
@@ -296,6 +319,13 @@
       };
     }
 
+    containerToWorld(cx, cy) {
+      return {
+        x: (cx - this.panX) / this.zoomScale,
+        y: (cy - this.panY) / this.zoomScale
+      };
+    }
+
     applyViewportTransform() {
       if (this.viewportGroup) {
         this.viewportGroup.setAttribute('transform', `translate(${this.panX}, ${this.panY}) scale(${this.zoomScale})`);
@@ -309,6 +339,8 @@
       if (this.selectedComponentId) {
         this.updateComponentActionsPosition();
       }
+      this.renderMeterWires();
+      this.updateMeterReadouts();
     }
 
     zoomAt(clientX, clientY, factor) {
@@ -601,22 +633,91 @@
         });
       }
 
-      // 7. Flow Mode Switcher: Elektron vs Arus (hanya salah satu yang aktif)
+      // 7. Flow Mode Switcher: Elektron vs Arus vs Mati
       const btnFlowElec = document.getElementById('btn-flow-electrons');
       const btnFlowCurr = document.getElementById('btn-flow-current');
-      if (btnFlowElec && btnFlowCurr) {
-        btnFlowElec.addEventListener('click', () => {
-          this.flowMode = 'electrons';
-          btnFlowElec.classList.add('active');
-          btnFlowCurr.classList.remove('active');
+      const btnFlowOff = document.getElementById('btn-flow-off');
+
+      this.setFlowMode = (mode) => {
+        this.flowMode = mode;
+        if (btnFlowElec) btnFlowElec.classList.toggle('active', mode === 'electrons');
+        if (btnFlowCurr) btnFlowCurr.classList.toggle('active', mode === 'current');
+        if (btnFlowOff) btnFlowOff.classList.toggle('active', mode === 'none');
+
+        if (mode === 'electrons') {
           this.showToast('Menampilkan Aliran Elektron (− ke +) ⊖', 'normal');
-        });
-        btnFlowCurr.addEventListener('click', () => {
-          this.flowMode = 'current';
-          btnFlowCurr.classList.add('active');
-          btnFlowElec.classList.remove('active');
+        } else if (mode === 'current') {
           this.showToast('Menampilkan Arus Konvensional (+ ke −) ➔', 'normal');
+        } else {
+          if (this.electronsGroup) this.electronsGroup.innerHTML = '';
+          this.showToast('Aliran partikel dinonaktifkan (Mati) 🚫', 'normal');
+        }
+      };
+
+      if (btnFlowElec) {
+        btnFlowElec.addEventListener('click', () => {
+          this.setFlowMode(this.flowMode === 'electrons' ? 'none' : 'electrons');
         });
+      }
+      if (btnFlowCurr) {
+        btnFlowCurr.addEventListener('click', () => {
+          this.setFlowMode(this.flowMode === 'current' ? 'none' : 'current');
+        });
+      }
+      if (btnFlowOff) {
+        btnFlowOff.addEventListener('click', () => {
+          this.setFlowMode('none');
+        });
+      }
+
+      // 7.5 Meter Tools (Voltmeter & Amperemeter Probes)
+      const btnToggleVm = document.getElementById('btn-toggle-voltmeter');
+      const btnToggleAm = document.getElementById('btn-toggle-ammeter');
+      const btnCloseVm = document.getElementById('btn-close-vm');
+      const btnCloseAm = document.getElementById('btn-close-am');
+
+      if (btnToggleVm) {
+        btnToggleVm.addEventListener('click', () => {
+          this.toggleVoltmeter(!this.isVoltmeterActive);
+        });
+      }
+      if (btnCloseVm) {
+        btnCloseVm.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleVoltmeter(false);
+        });
+      }
+
+      if (btnToggleAm) {
+        btnToggleAm.addEventListener('click', () => {
+          this.toggleAmmeter(!this.isAmmeterActive);
+        });
+      }
+      if (btnCloseAm) {
+        btnCloseAm.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleAmmeter(false);
+        });
+      }
+
+      // Drag handles for floating meters & probes
+      const vmDragHandle = document.getElementById('vm-drag-handle');
+      if (vmDragHandle) {
+        vmDragHandle.addEventListener('pointerdown', (e) => this.startMeterWidgetDrag('voltmeter', e));
+      }
+      if (this.vmProbeRed) {
+        this.vmProbeRed.addEventListener('pointerdown', (e) => this.startProbeDrag('vm_red', e));
+      }
+      if (this.vmProbeBlack) {
+        this.vmProbeBlack.addEventListener('pointerdown', (e) => this.startProbeDrag('vm_black', e));
+      }
+
+      const amDragHandle = document.getElementById('am-drag-handle');
+      if (amDragHandle) {
+        amDragHandle.addEventListener('pointerdown', (e) => this.startMeterWidgetDrag('ammeter', e));
+      }
+      if (this.amProbeSensor) {
+        this.amProbeSensor.addEventListener('pointerdown', (e) => this.startProbeDrag('am_sensor', e));
       }
 
       // 8. Header buttons: Sound, Help, Fullscreen
@@ -732,7 +833,9 @@
         state: type === 'switch' ? 'closed' : 'default',
         litState: 'off',
         isConducting: false,
-        spinAngle: 0
+        spinAngle: 0,
+        measuredCurrent: 0,
+        measuredVoltage: 0
       };
 
       this.components.push(comp);
@@ -768,7 +871,7 @@
 
     showDragGhost(type, clientX, clientY) {
       const def = COMPONENT_DEFAULTS[type] || COMPONENT_DEFAULTS.wire;
-      const icon = def.icon || (type === 'battery' ? '🔋' : type === 'bulb' ? '💡' : type === 'switch' ? '⏻' : type === 'dinamo' ? '⚙️' : type === 'solar' ? '☀️' : '🔌');
+      const icon = def.icon || (type === 'battery' ? '🔋' : type === 'bulb' ? '💡' : type === 'switch' ? '⏻' : type === 'dinamo' ? '⚙️' : type === 'solar' ? '☀️' : type === 'ammeter' ? '🎛️' : type === 'voltmeter' ? '📟' : '🔌');
       this.dragGhost.innerHTML = `<span>${icon}</span> <span>${def.title}</span>`;
       this.dragGhost.style.left = `${clientX}px`;
       this.dragGhost.style.top = `${clientY}px`;
@@ -1165,6 +1268,44 @@
       if (!this.dragState) return;
       e.preventDefault();
 
+      if (this.dragState.mode === 'drag_meter_widget') {
+        const dx = e.clientX - this.dragState.startClientX;
+        const dy = e.clientY - this.dragState.startClientY;
+        const newX = Math.max(10, this.dragState.initX + dx);
+        const newY = Math.max(10, this.dragState.initY + dy);
+        if (this.dragState.meterType === 'voltmeter') {
+          this.voltmeterPos.x = newX;
+          this.voltmeterPos.y = newY;
+        } else {
+          this.ammeterPos.x = newX;
+          this.ammeterPos.y = newY;
+        }
+        this.updateMeterDOMPositions();
+        this.renderMeterWires();
+        return;
+      }
+
+      if (this.dragState.mode === 'drag_probe') {
+        const dx = e.clientX - this.dragState.startClientX;
+        const dy = e.clientY - this.dragState.startClientY;
+        const newX = Math.max(10, this.dragState.initX + dx);
+        const newY = Math.max(10, this.dragState.initY + dy);
+        if (this.dragState.probeType === 'vm_red') {
+          this.vmProbeRedPos.x = newX;
+          this.vmProbeRedPos.y = newY;
+        } else if (this.dragState.probeType === 'vm_black') {
+          this.vmProbeBlackPos.x = newX;
+          this.vmProbeBlackPos.y = newY;
+        } else if (this.dragState.probeType === 'am_sensor') {
+          this.amProbeSensorPos.x = newX;
+          this.amProbeSensorPos.y = newY;
+        }
+        this.updateMeterDOMPositions();
+        this.renderMeterWires();
+        this.updateMeterReadouts();
+        return;
+      }
+
       const dx = e.clientX - this.dragState.startClientX;
       const dy = e.clientY - this.dragState.startClientY;
       const dist = Math.hypot(dx, dy);
@@ -1249,6 +1390,12 @@
     onPointerUp(e) {
       if (!this.dragState) return;
 
+      if (this.dragState.mode === 'drag_meter_widget' || this.dragState.mode === 'drag_probe') {
+        this.updateMeterReadouts();
+        this.dragState = null;
+        return;
+      }
+
       if (this.dragState.mode === 'vertex') {
         this.snapHalo.classList.add('hidden');
         if (this.dragState.snapCandidateId) {
@@ -1279,6 +1426,224 @@
       this.updateComponentActionsPosition();
     }
 
+    startMeterWidgetDrag(meterType, e) {
+      e.stopPropagation();
+      this.dragState = {
+        mode: 'drag_meter_widget',
+        meterType,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        initX: meterType === 'voltmeter' ? this.voltmeterPos.x : this.ammeterPos.x,
+        initY: meterType === 'voltmeter' ? this.voltmeterPos.y : this.ammeterPos.y
+      };
+    }
+
+    startProbeDrag(probeType, e) {
+      e.stopPropagation();
+      let initPos;
+      if (probeType === 'vm_red') initPos = this.vmProbeRedPos;
+      else if (probeType === 'vm_black') initPos = this.vmProbeBlackPos;
+      else if (probeType === 'am_sensor') initPos = this.amProbeSensorPos;
+      if (!initPos) return;
+
+      this.dragState = {
+        mode: 'drag_probe',
+        probeType,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        initX: initPos.x,
+        initY: initPos.y
+      };
+    }
+
+    toggleVoltmeter(active) {
+      this.isVoltmeterActive = !!active;
+      const btnToggle = document.getElementById('btn-toggle-voltmeter');
+      if (btnToggle) btnToggle.classList.toggle('active', this.isVoltmeterActive);
+
+      if (this.floatingVoltmeter) this.floatingVoltmeter.classList.toggle('hidden', !this.isVoltmeterActive);
+      if (this.vmProbeRed) this.vmProbeRed.classList.toggle('hidden', !this.isVoltmeterActive);
+      if (this.vmProbeBlack) this.vmProbeBlack.classList.toggle('hidden', !this.isVoltmeterActive);
+
+      if (this.isVoltmeterActive) {
+        this.updateMeterDOMPositions();
+        this.renderMeterWires();
+        this.updateMeterReadouts();
+        this.showToast('Voltmeter aktif! Pasang probe merah (+) & hitam (−) ke sambungan titik 📟', 'normal');
+      } else {
+        this.renderMeterWires();
+      }
+    }
+
+    toggleAmmeter(active) {
+      this.isAmmeterActive = !!active;
+      const btnToggle = document.getElementById('btn-toggle-ammeter');
+      if (btnToggle) btnToggle.classList.toggle('active', this.isAmmeterActive);
+
+      if (this.floatingAmmeter) this.floatingAmmeter.classList.toggle('hidden', !this.isAmmeterActive);
+      if (this.amProbeSensor) this.amProbeSensor.classList.toggle('hidden', !this.isAmmeterActive);
+
+      if (this.isAmmeterActive) {
+        this.updateMeterDOMPositions();
+        this.renderMeterWires();
+        this.updateMeterReadouts();
+        this.showToast('Amperemeter aktif! Dekatkan sensor penjepit ke kabel/komponen 🎛️', 'normal');
+      } else {
+        this.renderMeterWires();
+      }
+    }
+
+    updateMeterDOMPositions() {
+      if (this.floatingVoltmeter) {
+        this.floatingVoltmeter.style.left = `${this.voltmeterPos.x}px`;
+        this.floatingVoltmeter.style.top = `${this.voltmeterPos.y}px`;
+      }
+      if (this.vmProbeRed) {
+        this.vmProbeRed.style.left = `${this.vmProbeRedPos.x}px`;
+        this.vmProbeRed.style.top = `${this.vmProbeRedPos.y}px`;
+      }
+      if (this.vmProbeBlack) {
+        this.vmProbeBlack.style.left = `${this.vmProbeBlackPos.x}px`;
+        this.vmProbeBlack.style.top = `${this.vmProbeBlackPos.y}px`;
+      }
+      if (this.floatingAmmeter) {
+        this.floatingAmmeter.style.left = `${this.ammeterPos.x}px`;
+        this.floatingAmmeter.style.top = `${this.ammeterPos.y}px`;
+      }
+      if (this.amProbeSensor) {
+        this.amProbeSensor.style.left = `${this.amProbeSensorPos.x}px`;
+        this.amProbeSensor.style.top = `${this.amProbeSensorPos.y}px`;
+      }
+    }
+
+    renderMeterWires() {
+      if (!this.meterWiresGroup) return;
+      this.meterWiresGroup.innerHTML = '';
+
+      if (this.isVoltmeterActive) {
+        // Red Probe Wire
+        const mRed = this.containerToWorld(this.voltmeterPos.x + 130, this.voltmeterPos.y + 85);
+        const pRed = this.containerToWorld(this.vmProbeRedPos.x, this.vmProbeRedPos.y + 40);
+        const pathRed = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const c1RedY = mRed.y + 45 / this.zoomScale;
+        const c2RedY = pRed.y + 45 / this.zoomScale;
+        pathRed.setAttribute('d', `M ${mRed.x} ${mRed.y} C ${mRed.x} ${c1RedY}, ${pRed.x} ${c2RedY}, ${pRed.x} ${pRed.y}`);
+        pathRed.setAttribute('fill', 'none');
+        pathRed.setAttribute('stroke', '#ef4444');
+        pathRed.setAttribute('stroke-width', `${3.5 / this.zoomScale}`);
+        pathRed.setAttribute('stroke-linecap', 'round');
+        pathRed.setAttribute('opacity', '0.9');
+        this.meterWiresGroup.appendChild(pathRed);
+
+        // Black Probe Wire
+        const mBlk = this.containerToWorld(this.voltmeterPos.x + 45, this.voltmeterPos.y + 85);
+        const pBlk = this.containerToWorld(this.vmProbeBlackPos.x, this.vmProbeBlackPos.y + 40);
+        const pathBlk = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const c1BlkY = mBlk.y + 45 / this.zoomScale;
+        const c2BlkY = pBlk.y + 45 / this.zoomScale;
+        pathBlk.setAttribute('d', `M ${mBlk.x} ${mBlk.y} C ${mBlk.x} ${c1BlkY}, ${pBlk.x} ${c2BlkY}, ${pBlk.x} ${pBlk.y}`);
+        pathBlk.setAttribute('fill', 'none');
+        pathBlk.setAttribute('stroke', '#334155');
+        pathBlk.setAttribute('stroke-width', `${3.5 / this.zoomScale}`);
+        pathBlk.setAttribute('stroke-linecap', 'round');
+        pathBlk.setAttribute('opacity', '0.9');
+        this.meterWiresGroup.appendChild(pathBlk);
+      }
+
+      if (this.isAmmeterActive) {
+        // Sensor Probe Wire
+        const mAm = this.containerToWorld(this.ammeterPos.x + 87, this.ammeterPos.y + 85);
+        const pAm = this.containerToWorld(this.amProbeSensorPos.x, this.amProbeSensorPos.y + 42);
+        const pathAm = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const c1AmY = mAm.y + 45 / this.zoomScale;
+        const c2AmY = pAm.y + 45 / this.zoomScale;
+        pathAm.setAttribute('d', `M ${mAm.x} ${mAm.y} C ${mAm.x} ${c1AmY}, ${pAm.x} ${c2AmY}, ${pAm.x} ${pAm.y}`);
+        pathAm.setAttribute('fill', 'none');
+        pathAm.setAttribute('stroke', '#0284c7');
+        pathAm.setAttribute('stroke-width', `${3.5 / this.zoomScale}`);
+        pathAm.setAttribute('stroke-linecap', 'round');
+        pathAm.setAttribute('opacity', '0.9');
+        this.meterWiresGroup.appendChild(pathAm);
+      }
+    }
+
+    findNearestVertexToPos(cx, cy, maxDist = 38) {
+      const worldPos = this.containerToWorld(cx, cy);
+      let closest = null;
+      let minDist = maxDist;
+      for (const [, v] of this.vertices) {
+        const d = Math.hypot(v.x - worldPos.x, v.y - worldPos.y);
+        if (d < minDist) {
+          minDist = d;
+          closest = v;
+        }
+      }
+      return closest;
+    }
+
+    findNearestComponentToPos(cx, cy, maxDist = 38) {
+      const worldPos = this.containerToWorld(cx, cy);
+      let closest = null;
+      let minDist = maxDist;
+
+      for (const comp of this.components) {
+        const v1 = this.vertices.get(comp.v1Id);
+        const v2 = this.vertices.get(comp.v2Id);
+        if (!v1 || !v2) continue;
+
+        const dx = v2.x - v1.x;
+        const dy = v2.y - v1.y;
+        const lenSq = dx * dx + dy * dy;
+        let d = 0;
+        if (lenSq === 0) {
+          d = Math.hypot(worldPos.x - v1.x, worldPos.y - v1.y);
+        } else {
+          let t = ((worldPos.x - v1.x) * dx + (worldPos.y - v1.y) * dy) / lenSq;
+          t = Math.max(0, Math.min(1, t));
+          const projX = v1.x + t * dx;
+          const projY = v1.y + t * dy;
+          d = Math.hypot(worldPos.x - projX, worldPos.y - projY);
+        }
+
+        if (d < minDist) {
+          minDist = d;
+          closest = comp;
+        }
+      }
+      return closest;
+    }
+
+    updateMeterReadouts() {
+      if (this.isVoltmeterActive) {
+        const vRed = this.findNearestVertexToPos(this.vmProbeRedPos.x, this.vmProbeRedPos.y);
+        const vBlack = this.findNearestVertexToPos(this.vmProbeBlackPos.x, this.vmProbeBlackPos.y);
+        let vDiff = 0;
+        if (vRed && vBlack) {
+          const potRed = this.vertexPotentials.has(vRed.id) ? this.vertexPotentials.get(vRed.id) : 0;
+          const potBlack = this.vertexPotentials.has(vBlack.id) ? this.vertexPotentials.get(vBlack.id) : 0;
+          vDiff = potRed - potBlack;
+        }
+        const el = document.getElementById('vm-lcd-val');
+        if (el) el.textContent = Math.abs(vDiff) < 0.005 ? '0.00' : vDiff.toFixed(2);
+      }
+
+      if (this.isAmmeterActive) {
+        const comp = this.findNearestComponentToPos(this.amProbeSensorPos.x, this.amProbeSensorPos.y);
+        let currentVal = 0;
+        if (comp) {
+          if (comp.isShorted) {
+            currentVal = 99.99;
+          } else if (comp.isConducting) {
+            currentVal = comp.measuredCurrent || 0;
+          }
+        }
+        const el = document.getElementById('am-lcd-val');
+        if (el) {
+          el.textContent = currentVal > 50 ? '> 10.0' : currentVal.toFixed(2);
+        }
+      }
+    }
+
     toggleSwitch(comp) {
       comp.state = comp.state === 'closed' ? 'open' : 'closed';
       this.sound.playClick();
@@ -1291,18 +1656,22 @@
     // ==========================================================================
     updateSimulation() {
       // Reset component states
+      this.vertexPotentials.clear();
       this.components.forEach(c => {
         if (c.type === 'bulb') c.litState = 'off';
         c.isConducting = false;
         c.isShorted = false;
         c.currentFromVId = null;
         c.currentToVId = null;
+        c.measuredCurrent = 0;
+        c.measuredVoltage = 0;
       });
 
       const powerSources = this.components.filter(c => c.type === 'battery' || c.type === 'solar');
       if (powerSources.length === 0) {
         this.circuitVoltage = 0;
         this.renderBulbVisuals();
+        this.updateMeterReadouts();
         this.checkMissions();
         return;
       }
@@ -1359,11 +1728,15 @@
       if (wasLit) this.sound.playChime();
 
       this.renderBulbVisuals();
+      this.updateMeterReadouts();
       this.checkMissions();
     }
 
     solveBatteryCircuit(battery) {
-      if (battery.voltage !== undefined && battery.voltage <= 0) {
+      const srcV = battery.voltage !== undefined ? battery.voltage : (battery.type === 'solar' ? 3.0 : 1.5);
+      if (srcV <= 0) {
+        this.vertexPotentials.set(battery.v1Id, 0);
+        this.vertexPotentials.set(battery.v2Id, 0);
         return { isShortCircuit: false, bulbBrightnessMap: new Map(), activeComps: [], shortedComps: [] };
       }
 
@@ -1405,7 +1778,33 @@
       visitedComponents.add(battery.id);
       dfs(startVertexId, []);
 
+      // Propagate open-circuit potentials along conducting branches
+      const propagatePotential = (rootVId, val) => {
+        const queue = [rootVId];
+        const visited = new Set([rootVId]);
+        while (queue.length > 0) {
+          const currVId = queue.shift();
+          const edges = this.components.filter(c =>
+            (c.v1Id === currVId || c.v2Id === currVId) &&
+            this.canComponentConduct(c) &&
+            !c.isConducting
+          );
+          for (const comp of edges) {
+            const nextVId = comp.v1Id === currVId ? comp.v2Id : comp.v1Id;
+            if (!visited.has(nextVId) && !this.vertexPotentials.has(nextVId)) {
+              visited.add(nextVId);
+              this.vertexPotentials.set(nextVId, val);
+              queue.push(nextVId);
+            }
+          }
+        }
+      };
+
       if (allPaths.length === 0) {
+        this.vertexPotentials.set(battery.v1Id, 0);
+        this.vertexPotentials.set(battery.v2Id, srcV);
+        propagatePotential(battery.v2Id, srcV);
+        propagatePotential(battery.v1Id, 0);
         return { isShortCircuit: false, bulbBrightnessMap: new Map(), activeComps: [], shortedComps: [] };
       }
 
@@ -1415,20 +1814,40 @@
       const shortedComps = new Set();
 
       allPaths.forEach(path => {
-        const loadsInPath = path.filter(step => step.comp.type === 'bulb' || step.comp.type === 'dinamo');
-        if (loadsInPath.length === 0) {
-          // Direct connection with no load (bulb or dinamo) = Short Circuit!
+        let pathR = 0;
+        let hasLoad = false;
+        path.forEach(step => {
+          if (step.comp.type === 'bulb') {
+            pathR += 10.0;
+            hasLoad = true;
+          } else if (step.comp.type === 'dinamo') {
+            pathR += 10.0;
+            hasLoad = true;
+          } else if (step.comp.type === 'voltmeter') {
+            pathR += 10000.0;
+          } else {
+            pathR += 0.05; // wire, switch, ammeter, nail, coin
+          }
+        });
+
+        if (!hasLoad && pathR < 0.3) {
+          // Direct connection with no load = Short Circuit!
           isShortCircuit = true;
+          const I_short = 50.0;
           path.forEach(step => {
             shortedComps.add(step.comp);
             step.comp.currentFromVId = step.fromVId;
             step.comp.currentToVId = step.toVId;
+            step.comp.measuredCurrent = (step.comp.measuredCurrent || 0) + I_short;
           });
           shortedComps.add(battery);
           battery.currentFromVId = battery.v1Id;
           battery.currentToVId = battery.v2Id;
+          battery.measuredCurrent = (battery.measuredCurrent || 0) + I_short;
         } else {
-          // Fisika Rangkaian: Beban lampu
+          // Fisika Rangkaian: Hukum Ohm I = V / R
+          const I_path = srcV / pathR;
+
           const bulbsInPath = path.filter(step => step.comp.type === 'bulb');
           if (bulbsInPath.length > 0) {
             const brightness = bulbsInPath.length === 1 ? 'lit' : 'dim';
@@ -1438,16 +1857,38 @@
               }
             });
           }
+
+          let currPotential = srcV;
+          this.vertexPotentials.set(startVertexId, srcV);
+
           path.forEach(step => {
             activeComps.add(step.comp);
             step.comp.currentFromVId = step.fromVId;
             step.comp.currentToVId = step.toVId;
+            step.comp.measuredCurrent = (step.comp.measuredCurrent || 0) + I_path;
+
+            let compR = 0.05;
+            if (step.comp.type === 'bulb' || step.comp.type === 'dinamo') compR = 10.0;
+            else if (step.comp.type === 'voltmeter') compR = 10000.0;
+
+            const drop = Math.min(currPotential, I_path * compR);
+            const nextPotential = Math.max(0, currPotential - drop);
+            this.vertexPotentials.set(step.toVId, nextPotential);
+            step.comp.measuredVoltage = Math.abs(currPotential - nextPotential);
+            currPotential = nextPotential;
           });
+
           activeComps.add(battery);
           battery.currentFromVId = battery.v1Id;
           battery.currentToVId = battery.v2Id;
+          battery.measuredCurrent = (battery.measuredCurrent || 0) + I_path;
         }
       });
+
+      this.vertexPotentials.set(battery.v1Id, 0);
+      this.vertexPotentials.set(battery.v2Id, srcV);
+      propagatePotential(battery.v2Id, srcV);
+      propagatePotential(battery.v1Id, 0);
 
       return {
         isShortCircuit,
@@ -1459,9 +1900,11 @@
 
     canComponentConduct(comp) {
       if (comp.type === 'wire') return true;
-      if (comp.type === 'battery' || comp.type === 'solar') return true; // Conduction through series power sources
+      if (comp.type === 'battery' || comp.type === 'solar') return true;
       if (comp.type === 'bulb') return true;
       if (comp.type === 'dinamo') return true;
+      if (comp.type === 'ammeter') return true;
+      if (comp.type === 'voltmeter') return true;
       if (comp.type === 'switch') return comp.state === 'closed';
       if (comp.def && comp.def.isConductor) return true;
       return false; // Insulators do not conduct
@@ -1548,6 +1991,9 @@
 
         this.verticesGroup.appendChild(g);
       });
+
+      this.renderMeterWires();
+      this.updateMeterReadouts();
     }
 
     renderComponentGraphic(comp, len) {
@@ -1905,6 +2351,78 @@
             <text x="0" y="0" font-family="'Fredoka', sans-serif" font-size="9" font-weight="700" fill="#fef08a" text-anchor="middle" dominant-baseline="central">☀️ ${(comp.voltage !== undefined ? comp.voltage : 3.0).toFixed(1)}V</text>
           </g>
         `;
+      } else if (comp.type === 'ammeter') {
+        const valStr = comp.isShorted ? '> 10 A' : `${(comp.measuredCurrent || 0).toFixed(2)} A`;
+        return `
+          ${isSelected ? `
+            <g class="selection-highlight">
+              <rect x="-6" y="-24" width="${len + 12}" height="48" rx="10" class="selection-halo" />
+              <circle cx="-6" cy="-24" r="3.5" class="selection-corner" />
+              <circle cx="${len + 6}" cy="-24" r="3.5" class="selection-corner" />
+              <circle cx="-6" cy="24" r="3.5" class="selection-corner" />
+              <circle cx="${len + 6}" cy="24" r="3.5" class="selection-corner" />
+            </g>
+          ` : ''}
+          <line x1="0" y1="0" x2="${len}" y2="0" class="component-body-outline" stroke="transparent" stroke-width="40" />
+          <!-- Terminal (-) Kiri -->
+          <line x1="0" y1="0" x2="16" y2="0" stroke="#64748b" stroke-width="5" />
+          <rect x="8" y="-7" width="8" height="14" fill="#94a3b8" rx="2" stroke="#475569" stroke-width="1" />
+          <text x="12" y="0" font-family="'Fredoka', sans-serif" font-size="11" font-weight="900" fill="#1e293b" text-anchor="middle" dominant-baseline="central">−</text>
+
+          <!-- Terminal (+) Kanan -->
+          <line x1="${len - 16}" y1="0" x2="${len}" y2="0" stroke="#64748b" stroke-width="5" />
+          <rect x="${len - 16}" y="-7" width="8" height="14" fill="#ef4444" rx="2" stroke="#dc2626" stroke-width="1" />
+          <text x="${len - 12}" y="0" font-family="'Fredoka', sans-serif" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">+</text>
+
+          <!-- Kotak Meter Digital Solid (Dark Slate dengan Bezel Hijau Teal) -->
+          <rect x="16" y="-20" width="${len - 32}" height="40" fill="#1e293b" stroke="#059669" stroke-width="2" rx="6" />
+          <!-- Label Header -->
+          <text x="${len * 0.5}" y="-11" font-family="'Fredoka', sans-serif" font-size="7.5" font-weight="800" fill="#94a3b8" text-anchor="middle">AMPEREMETER</text>
+          <!-- Layar LCD Hitam Pekat -->
+          <rect x="22" y="-4" width="${len - 44}" height="20" fill="#064e3b" stroke="#047857" stroke-width="1.2" rx="3" />
+          <!-- Nilai Arus Digital Hijau Terang -->
+          <text x="${len * 0.5}" y="7" font-family="'JetBrains Mono', monospace, sans-serif" font-size="11" font-weight="900" fill="#4ade80" text-anchor="middle" dominant-baseline="central">${valStr}</text>
+        `;
+      } else if (comp.type === 'voltmeter') {
+        const v1 = this.vertices.get(comp.v1Id);
+        const v2 = this.vertices.get(comp.v2Id);
+        let measuredV = 0;
+        if (v1 && v2) {
+          const p1 = this.vertexPotentials.has(v1.id) ? this.vertexPotentials.get(v1.id) : 0;
+          const p2 = this.vertexPotentials.has(v2.id) ? this.vertexPotentials.get(v2.id) : 0;
+          measuredV = Math.abs(p1 - p2);
+        }
+        const valStr = `${measuredV.toFixed(2)} V`;
+        return `
+          ${isSelected ? `
+            <g class="selection-highlight">
+              <rect x="-6" y="-24" width="${len + 12}" height="48" rx="10" class="selection-halo" />
+              <circle cx="-6" cy="-24" r="3.5" class="selection-corner" />
+              <circle cx="${len + 6}" cy="-24" r="3.5" class="selection-corner" />
+              <circle cx="-6" cy="24" r="3.5" class="selection-corner" />
+              <circle cx="${len + 6}" cy="24" r="3.5" class="selection-corner" />
+            </g>
+          ` : ''}
+          <line x1="0" y1="0" x2="${len}" y2="0" class="component-body-outline" stroke="transparent" stroke-width="40" />
+          <!-- Terminal (-) Kiri -->
+          <line x1="0" y1="0" x2="16" y2="0" stroke="#64748b" stroke-width="5" />
+          <rect x="8" y="-7" width="8" height="14" fill="#94a3b8" rx="2" stroke="#475569" stroke-width="1" />
+          <text x="12" y="0" font-family="'Fredoka', sans-serif" font-size="11" font-weight="900" fill="#1e293b" text-anchor="middle" dominant-baseline="central">−</text>
+
+          <!-- Terminal (+) Kanan -->
+          <line x1="${len - 16}" y1="0" x2="${len}" y2="0" stroke="#64748b" stroke-width="5" />
+          <rect x="${len - 16}" y="-7" width="8" height="14" fill="#ef4444" rx="2" stroke="#dc2626" stroke-width="1" />
+          <text x="${len - 12}" y="0" font-family="'Fredoka', sans-serif" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">+</text>
+
+          <!-- Kotak Meter Digital Solid (Dark Slate dengan Bezel Amber) -->
+          <rect x="16" y="-20" width="${len - 32}" height="40" fill="#1e293b" stroke="#f59e0b" stroke-width="2" rx="6" />
+          <!-- Label Header -->
+          <text x="${len * 0.5}" y="-11" font-family="'Fredoka', sans-serif" font-size="7.5" font-weight="800" fill="#94a3b8" text-anchor="middle">VOLTMETER</text>
+          <!-- Layar LCD Gelap Amber -->
+          <rect x="22" y="-4" width="${len - 44}" height="20" fill="#451a03" stroke="#b45309" stroke-width="1.2" rx="3" />
+          <!-- Nilai Tegangan Digital Kuning Emas Terang -->
+          <text x="${len * 0.5}" y="7" font-family="'JetBrains Mono', monospace, sans-serif" font-size="11" font-weight="900" fill="#fef08a" text-anchor="middle" dominant-baseline="central">${valStr}</text>
+        `;
       } else {
         // Fallback for other items
         return `
@@ -1968,6 +2486,11 @@
     }
 
     renderParticles() {
+      if (this.flowMode === 'none') {
+        if (this.electronsGroup.hasChildNodes()) this.electronsGroup.innerHTML = '';
+        return;
+      }
+
       const conductingComps = this.components.filter(c => c.isConducting);
       if (conductingComps.length === 0 || (this.circuitVoltage <= 0 && !this.components.some(c => c.isShorted))) {
         if (this.electronsGroup.hasChildNodes()) this.electronsGroup.innerHTML = '';

@@ -179,6 +179,57 @@ html, body {
   color: #ea580c;
 }
 
+.flow-btn#btn-flow-off.active {
+  color: #64748b;
+  background: #e2e8f0;
+}
+
+/* Meter Tools Switcher (Voltmeter & Amperemeter Probes) */
+.meter-tools-bar {
+  display: flex;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 999px;
+  gap: 3px;
+  border: 1px solid #cbd5e1;
+}
+
+.meter-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.meter-btn:hover {
+  color: var(--text-main);
+}
+
+.meter-btn.active {
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.meter-btn#btn-toggle-voltmeter.active {
+  color: #b45309;
+  border: 1.5px solid #f59e0b;
+}
+
+.meter-btn#btn-toggle-ammeter.active {
+  color: #0369a1;
+  border: 1.5px solid #0284c7;
+}
+
 .btn-icon {
   width: 40px;
   height: 40px;
@@ -1306,3 +1357,165 @@ html, body {
     display: none;
   }
 }
+
+/* ==========================================================================
+   9. Floating Multimeter & Amperemeter Instrument Widgets & Probes
+   ========================================================================== */
+.floating-meter-widget {
+  position: absolute;
+  z-index: 65;
+  width: 175px;
+  background: #1e293b;
+  border: 2.5px solid #334155;
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  user-select: none;
+  touch-action: none;
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.meter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #334155;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+}
+
+.meter-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.meter-close:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.meter-lcd {
+  margin: 8px 0;
+  background: #0f172a;
+  border: 2px solid #0369a1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.meter-lcd.ammeter-lcd {
+  border-color: #059669;
+}
+
+.lcd-value {
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: 1px;
+}
+
+.ammeter-lcd .lcd-value {
+  color: #4ade80;
+}
+
+.lcd-unit {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.meter-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.legend-red { color: #f87171; }
+.legend-black { color: #94a3b8; }
+.legend-blue { color: #38bdf8; }
+
+/* Floating Probe Handles */
+.floating-probe {
+  position: absolute;
+  z-index: 66;
+  width: 32px;
+  height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: grab;
+  touch-action: none;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+  transform: translate(-50%, -10px);
+}
+
+.probe-pin {
+  width: 4px;
+  height: 18px;
+  background: #cbd5e1;
+  border: 1px solid #475569;
+  border-radius: 2px 2px 0 0;
+}
+
+.probe-handle {
+  width: 24px;
+  height: 34px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 14px;
+  color: #ffffff;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.probe-red .probe-handle {
+  background: #ef4444;
+  border: 1.5px solid #b91c1c;
+}
+.probe-red .probe-pin {
+  background: #fca5a5;
+}
+
+.probe-black .probe-handle {
+  background: #0f172a;
+  border: 1.5px solid #334155;
+}
+
+.probe-sensor {
+  width: 36px;
+  height: 54px;
+}
+.probe-sensor .probe-handle {
+  background: #0284c7;
+  border: 1.5px solid #0369a1;
+  width: 28px;
+  height: 36px;
+}
+.probe-pin-sensor {
+  width: 14px;
+  height: 16px;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  border: 3.5px solid #0284c7;
+  border-bottom: none;
+}
+

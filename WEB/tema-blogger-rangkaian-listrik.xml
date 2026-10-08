@@ -359,6 +359,28 @@
             Tersedia paku besi dan koin emas (konduktor listrik) serta penghapus karet dan mistar ukur cm (isolator listrik) untuk penyelidikan sains.
           </p>
         </div>
+
+        <!-- Card 7 -->
+        <div class='feature-card p-6 rounded-2xl bg-slate-50 border border-slate-200'>
+          <div class='w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mb-4 font-bold'>
+            📟
+          </div>
+          <h3 class='font-heading text-xl font-bold text-slate-900 mb-2'>Voltmeter Probe Portabel</h3>
+          <p class='text-sm text-slate-600 leading-relaxed'>
+            Multimeter portabel dengan probe merah (+) dan hitam (−) untuk mengukur beda potensial (voltase) antar titik sambungan secara real-time.
+          </p>
+        </div>
+
+        <!-- Card 8 -->
+        <div class='feature-card p-6 rounded-2xl bg-slate-50 border border-slate-200'>
+          <div class='w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mb-4 font-bold'>
+            🎛️
+          </div>
+          <h3 class='font-heading text-xl font-bold text-slate-900 mb-2'>Amperemeter &amp; Aliran Partikel</h3>
+          <p class='text-sm text-slate-600 leading-relaxed'>
+            Ukur kuat arus listrik (Ampere) dengan sensor penjepit atau pasang di rangkaian. Tampilan elektron dan arus konvensional dapat diaktifkan atau dinonaktifkan (Mati) penuh.
+          </p>
+        </div>
       </div>
     </div>
   </section>
