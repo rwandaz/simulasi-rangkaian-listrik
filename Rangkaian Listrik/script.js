@@ -269,17 +269,18 @@
       this.vmProbeBlack = document.getElementById('vm-probe-black');
       this.floatingAmmeter = document.getElementById('floating-ammeter');
       this.amProbeSensor = document.getElementById('am-probe-sensor');
+      this.instrumentsDock = document.getElementById('instruments-dock');
 
       this.isVoltmeterActive = false;
       this.isAmmeterActive = false;
 
       // Positions in workbench container pixel coords
-      this.voltmeterPos = { x: 100, y: 55 };
-      this.vmProbeRedPos = { x: 190, y: 190 };
-      this.vmProbeBlackPos = { x: 65, y: 190 };
+      this.voltmeterPos = { x: 30, y: 30 };
+      this.vmProbeRedPos = { x: 130, y: 160 };
+      this.vmProbeBlackPos = { x: 45, y: 160 };
 
-      this.ammeterPos = { x: 300, y: 55 };
-      this.amProbeSensorPos = { x: 350, y: 190 };
+      this.ammeterPos = { x: 180, y: 30 };
+      this.amProbeSensorPos = { x: 230, y: 160 };
 
       this.vertexPotentials = new Map(); // vId -> volts
 
@@ -544,9 +545,15 @@
       // Canvas Zoom Control & Clear Buttons (+, Reset, -, Clear)
       const bottomBar = document.getElementById('workbench-bottom-bar');
       if (bottomBar) {
-        bottomBar.addEventListener('pointerdown', (e) => e.stopPropagation());
-        bottomBar.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
-        bottomBar.addEventListener('mousedown', (e) => e.stopPropagation());
+        bottomBar.addEventListener('pointerdown', (e) => {
+          if (e.target !== bottomBar) e.stopPropagation();
+        });
+        bottomBar.addEventListener('touchstart', (e) => {
+          if (e.target !== bottomBar) e.stopPropagation();
+        }, { passive: false });
+        bottomBar.addEventListener('mousedown', (e) => {
+          if (e.target !== bottomBar) e.stopPropagation();
+        });
       }
 
       const btnZoomIn = document.getElementById('btn-zoom-in');
@@ -754,6 +761,19 @@
       // Right-side instruments dock elements
       const cardDockVm = document.getElementById('card-dock-vm');
       const cardDockAm = document.getElementById('card-dock-am');
+      const dockHeaderToggle = document.getElementById('dock-header-toggle');
+
+      if (dockHeaderToggle && this.instrumentsDock) {
+        dockHeaderToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.instrumentsDock.classList.toggle('collapsed');
+        });
+      }
+
+      // Default terlipat (collapsed) pada perangkat ponsel/tablet agar kanvas maksimal
+      if (window.innerWidth <= 768 && this.instrumentsDock) {
+        this.instrumentsDock.classList.add('collapsed');
+      }
 
       if (btnToggleVm) {
         btnToggleVm.addEventListener('click', () => {
@@ -763,6 +783,9 @@
       if (cardDockVm) {
         cardDockVm.addEventListener('click', () => {
           this.toggleVoltmeter(!this.isVoltmeterActive);
+          if (window.innerWidth <= 768 && this.instrumentsDock) {
+            this.instrumentsDock.classList.add('collapsed');
+          }
         });
       }
       if (btnCloseVm) {
@@ -780,6 +803,9 @@
       if (cardDockAm) {
         cardDockAm.addEventListener('click', () => {
           this.toggleAmmeter(!this.isAmmeterActive);
+          if (window.innerWidth <= 768 && this.instrumentsDock) {
+            this.instrumentsDock.classList.add('collapsed');
+          }
         });
       }
       if (btnCloseAm) {
@@ -880,6 +906,9 @@
           this.updateSelectionToolbar();
           this.updateComponentActionsPosition();
           this.render();
+          if (window.innerWidth <= 768 && this.instrumentsDock && !this.instrumentsDock.classList.contains('collapsed')) {
+            this.instrumentsDock.classList.add('collapsed');
+          }
         }
       });
     }
@@ -1549,9 +1578,16 @@
       if (this.dragState.mode === 'drag_meter_widget') {
         const dx = e.clientX - this.dragState.startClientX;
         const dy = e.clientY - this.dragState.startClientY;
-        const newX = Math.max(10, this.dragState.initX + dx);
-        const newY = Math.max(10, this.dragState.initY + dy);
-        if (this.dragState.meterType === 'voltmeter') {
+        const wbW = this.workbench ? this.workbench.clientWidth : window.innerWidth;
+        const wbH = this.workbench ? this.workbench.clientHeight : window.innerHeight;
+        const isVm = (this.dragState.meterType === 'voltmeter');
+        const widgetElem = isVm ? this.floatingVoltmeter : this.floatingAmmeter;
+        const widgetW = (widgetElem && widgetElem.offsetWidth) ? widgetElem.offsetWidth : (wbW < 600 ? 140 : 180);
+        const widgetH = (widgetElem && widgetElem.offsetHeight) ? widgetElem.offsetHeight : (wbW < 600 ? 100 : 120);
+
+        const newX = Math.max(8, Math.min(wbW - widgetW - 8, this.dragState.initX + dx));
+        const newY = Math.max(8, Math.min(wbH - widgetH - 8, this.dragState.initY + dy));
+        if (isVm) {
           this.voltmeterPos.x = newX;
           this.voltmeterPos.y = newY;
         } else {
@@ -1566,8 +1602,11 @@
       if (this.dragState.mode === 'drag_probe') {
         const dx = e.clientX - this.dragState.startClientX;
         const dy = e.clientY - this.dragState.startClientY;
-        const newX = Math.max(10, this.dragState.initX + dx);
-        const newY = Math.max(10, this.dragState.initY + dy);
+        const wbW = this.workbench ? this.workbench.clientWidth : window.innerWidth;
+        const wbH = this.workbench ? this.workbench.clientHeight : window.innerHeight;
+
+        const newX = Math.max(12, Math.min(wbW - 12, this.dragState.initX + dx));
+        const newY = Math.max(12, Math.min(wbH - 25, this.dragState.initY + dy));
         if (this.dragState.probeType === 'vm_red') {
           this.vmProbeRedPos.x = newX;
           this.vmProbeRedPos.y = newY;
@@ -1793,6 +1832,43 @@
       };
     }
 
+    ensureMeterInBounds(meterType) {
+      const wbW = this.workbench ? this.workbench.clientWidth : window.innerWidth;
+      const wbH = this.workbench ? this.workbench.clientHeight : window.innerHeight;
+      const isMobile = wbW < 600;
+      const widgetW = isMobile ? 140 : 180;
+      const widgetH = isMobile ? 100 : 120;
+
+      if (meterType === 'voltmeter') {
+        const maxX = Math.max(10, wbW - widgetW - 10);
+        const maxY = Math.max(10, wbH - widgetH - 10);
+        if (this.voltmeterPos.x > maxX || this.voltmeterPos.x < 10) {
+          this.voltmeterPos.x = Math.max(10, Math.min(maxX, isMobile ? 12 : 30));
+        }
+        if (this.voltmeterPos.y > maxY || this.voltmeterPos.y < 10) {
+          this.voltmeterPos.y = Math.max(10, Math.min(maxY, 25));
+        }
+        // Pastikan probe merah dan hitam selalu berada di area yang terlihat
+        this.vmProbeRedPos.x = Math.max(15, Math.min(wbW - 25, this.voltmeterPos.x + (isMobile ? 105 : 135)));
+        this.vmProbeRedPos.y = Math.max(20, Math.min(wbH - 75, this.voltmeterPos.y + (isMobile ? 115 : 130)));
+        this.vmProbeBlackPos.x = Math.max(15, Math.min(wbW - 25, this.voltmeterPos.x + (isMobile ? 25 : 45)));
+        this.vmProbeBlackPos.y = Math.max(20, Math.min(wbH - 75, this.voltmeterPos.y + (isMobile ? 115 : 130)));
+      } else if (meterType === 'ammeter') {
+        const maxX = Math.max(10, wbW - widgetW - 10);
+        const maxY = Math.max(10, wbH - widgetH - 10);
+        if (this.ammeterPos.x > maxX || this.ammeterPos.x < 10) {
+          const targetX = isMobile ? Math.max(10, wbW - widgetW - 12) : 260;
+          this.ammeterPos.x = Math.max(10, Math.min(maxX, targetX));
+        }
+        if (this.ammeterPos.y > maxY || this.ammeterPos.y < 10) {
+          this.ammeterPos.y = Math.max(10, Math.min(maxY, 25));
+        }
+        // Pastikan sensor probe selalu berada di area yang terlihat
+        this.amProbeSensorPos.x = Math.max(20, Math.min(wbW - 30, this.ammeterPos.x + (isMobile ? 55 : 80)));
+        this.amProbeSensorPos.y = Math.max(20, Math.min(wbH - 75, this.ammeterPos.y + (isMobile ? 115 : 130)));
+      }
+    }
+
     toggleVoltmeter(active) {
       this.isVoltmeterActive = !!active;
       const btnToggle = document.getElementById('btn-toggle-voltmeter');
@@ -1805,6 +1881,7 @@
       if (this.vmProbeBlack) this.vmProbeBlack.classList.toggle('hidden', !this.isVoltmeterActive);
 
       if (this.isVoltmeterActive) {
+        this.ensureMeterInBounds('voltmeter');
         this.updateMeterDOMPositions();
         this.renderMeterWires();
         this.updateMeterReadouts();
@@ -1825,6 +1902,7 @@
       if (this.amProbeSensor) this.amProbeSensor.classList.toggle('hidden', !this.isAmmeterActive);
 
       if (this.isAmmeterActive) {
+        this.ensureMeterInBounds('ammeter');
         this.updateMeterDOMPositions();
         this.renderMeterWires();
         this.updateMeterReadouts();
@@ -1862,8 +1940,10 @@
       this.meterWiresGroup.innerHTML = '';
 
       if (this.isVoltmeterActive) {
+        const vmW = (this.floatingVoltmeter && this.floatingVoltmeter.offsetWidth) ? this.floatingVoltmeter.offsetWidth : 180;
+        const vmH = (this.floatingVoltmeter && this.floatingVoltmeter.offsetHeight) ? this.floatingVoltmeter.offsetHeight : 115;
         // Red Probe Wire (right jack to bottom of red probe handle)
-        const mRed = this.containerToWorld(this.voltmeterPos.x + 135, this.voltmeterPos.y + 115);
+        const mRed = this.containerToWorld(this.voltmeterPos.x + vmW * 0.75, this.voltmeterPos.y + vmH - 5);
         const pRed = this.containerToWorld(this.vmProbeRedPos.x, this.vmProbeRedPos.y + 70);
         const pathRed = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         const c1RedY = mRed.y + 55 / this.zoomScale;
@@ -1877,7 +1957,7 @@
         this.meterWiresGroup.appendChild(pathRed);
 
         // Black Probe Wire (left jack to bottom of black probe handle)
-        const mBlk = this.containerToWorld(this.voltmeterPos.x + 45, this.voltmeterPos.y + 115);
+        const mBlk = this.containerToWorld(this.voltmeterPos.x + vmW * 0.25, this.voltmeterPos.y + vmH - 5);
         const pBlk = this.containerToWorld(this.vmProbeBlackPos.x, this.vmProbeBlackPos.y + 70);
         const pathBlk = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         const c1BlkY = mBlk.y + 55 / this.zoomScale;
@@ -1892,8 +1972,10 @@
       }
 
       if (this.isAmmeterActive) {
+        const amW = (this.floatingAmmeter && this.floatingAmmeter.offsetWidth) ? this.floatingAmmeter.offsetWidth : 180;
+        const amH = (this.floatingAmmeter && this.floatingAmmeter.offsetHeight) ? this.floatingAmmeter.offsetHeight : 115;
         // Sensor Wand Wire (center jack to bottom of wand handle)
-        const mAm = this.containerToWorld(this.ammeterPos.x + 90, this.ammeterPos.y + 115);
+        const mAm = this.containerToWorld(this.ammeterPos.x + amW * 0.5, this.ammeterPos.y + amH - 5);
         const pAm = this.containerToWorld(this.amProbeSensorPos.x, this.amProbeSensorPos.y + 70);
         const pathAm = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         const c1AmY = mAm.y + 55 / this.zoomScale;
