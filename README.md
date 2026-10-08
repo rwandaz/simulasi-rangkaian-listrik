@@ -20,7 +20,17 @@ Aplikasi web interaktif simulasi rangkaian listrik untuk siswa Sekolah Dasar (SD
    - **Pilihan Aliran Listrik (Elektron vs Arus vs Nonaktif/Mati):** Pilihan fleksibel antara **Aliran Elektron** (− ke +), **Arus Konvensional** (+ ke −), atau **Nonaktifkan Semua (Mati 🚫)** untuk mematikan seluruh animasi partikel.
    - **Kontrol Zoom Kanvas:** Fitur zoom in (`➕`), zoom out (`➖`), reset (`100%`), scroll mouse, dan gestur cubit dua jari (pinch gesture) pada layar sentuh.
 
-2. **Komponen Visual & Fisika Realistis:**
+2. **Komponen Visual & Fisika Realistis (Hukum Ohm & Sirkuit Dinamis):**
+   - **Kecerahan Lampu Bohlam Proporsional Tegangan:**
+     - Kecerahan bohlam berubah secara kontinu sesuai tegangan ($0–24\text{V}$): dari redup hangat ($<1.1\text{V}$), standar terang ($1.5–3\text{V}$), hingga putih berkilau sangat terang ($>3\text{V}$) dengan lingkaran aura pendar (*radiant halo*) dan berkas sinar cahaya yang memanjang serta memancarkan kilau bintang (*sparkle beams*).
+     - Rangkaian seri otomatis membagi tegangan sehingga lampu menyala lebih redup, sedangkan rangkaian paralel memberikan tegangan penuh ke setiap cabang.
+   - **Kecepatan Putaran Dinamo Motor DC Proporsional Tegangan:**
+     - Kecepatan baling-baling motor dinamo bertambah kencang seiring naiknya voltase baterai ($0–24\text{V}$). Pada voltase tinggi ($>2.5\text{V}$), muncul efek cincin pusaran *motion blur* realistis yang menggambarkan RPM tinggi.
+     - Arah putaran baling-baling (searah vs berlawanan jarum jam) mengikuti arah polaritas arus listrik konvensional secara fisik!
+   - **Kecepatan Aliran Partikel Listrik Proporsional Arus:**
+     - Kecepatan hanyut partikel (elektron dan arus konvensional) bergerak sebanding dengan kuat arus riil ($I = \mathcal{E} / R$). Arus kecil mengalir lambat, arus besar mengalir deras, dan korsleting melesat sangat cepat.
+   - **Resistor / Hambatan Listrik (10 Ohm):**
+     - Komponen resistor keramik dengan gelang warna presisi (Coklat, Hitam, Hitam, Emas = $10\Omega$). Menghambat arus listrik secara nyata dan membagi tegangan saat dipasang seri dengan lampu maupun dinamo.
    - **Instrumen Multimeter & Amperemeter Realistis (Dock Samping Kanan):**
      - **Panel Dock Instrumen di Samping Kanan:** Siswa dapat mencentang atau mengklik kartu Voltmeter maupun Amperemeter untuk memunculkan instrumen di kanvas.
      - **Voltmeter Portabel (Multimeter Kuning):** Bodi multimeter kuning dengan layar LCD digital besar, port soket COM (−) hitam dan V (+) merah, serta dua jarum probe uji kabel fleksibel yang dapat disentuhkan ke titik sambungan.
@@ -29,13 +39,12 @@ Aplikasi web interaktif simulasi rangkaian listrik untuk siswa Sekolah Dasar (SD
    - **Bilah Kontrol Bawah Terpadu (Bottom Bar):**
      - Kontrol Zoom terpadu berbentuk pill (`−`, `100%`, `+`) yang responsif pada semua ukuran layar dan gestur sentuh.
      - Tombol **🗑️ Bersihkan Papan** yang menyatu rapi dan langsung merespon klik/sentuhan seketika tanpa terhalang SVG kanvas.
-   - **Baterai (Dapat Diatur):** Tombol `⚡` khusus muncul saat baterai dipilih untuk mengatur tegangan (0–24V). Kutub (+) dan (−) ditandai dengan jelas.
-   - **Panel Surya Fotovoltaik:** Sumber daya energi terbarukan ramah lingkungan dengan kisi busbar sel silikon dan pengaturan tegangan (0–24V).
+   - **Baterai (Dapat Diatur):** Tombol `⚡` khusus muncul saat baterai dipilih untuk mengatur tegangan ($0–24\text{V}$ dengan step halus $0.5\text{V}$). Kutub (+) dan (−) ditandai dengan jelas.
+   - **Panel Surya Fotovoltaik:** Sumber daya energi terbarukan ramah lingkungan dengan kisi busbar sel silikon dan pengaturan tegangan ($0–24\text{V}$).
    - **Dinamo Motor DC (Baling-Baling Menghadap ke Atas):** Desain ergonomis dengan poros vertikal di mana baling-baling 3 daun berputar menghadap ke atas (*upward-facing propeller*). Kedua titik terminal (− dan +) di kiri dan kanan sepenuhnya terbuka, bersih, dan bebas hambatan sehingga kabel sangat mudah dipasang!
-   - **Bohlam Pijar:** Radiasi cahaya dan pendar kuning saat dialiri arus listrik.
    - **Saklar Pisau:** Tuas mekanik klik ON/OFF dengan indikator status.
    - **Benda Uji Realistis:** Paku Besi baja & Koin Emas logam berigi (Konduktor), Penghapus karet dual-tone & Mistar bergaris ukuran cm nyata (Isolator).
-   - **Fisika Seri vs Paralel & Beban:** Lampu paralel menyala terang penuh, lampu seri menyala redup (*dim*), dan korsleting mendeteksi beban dinamo maupun lampu secara akurat.
+   - **Fisika Seri vs Paralel & Multi-Sumber Listrik:** Menghitung GGL total baterai seri maupun paralel serta pembagian potensial secara akurat.
    - **Peringatan Korsleting:** Korsleting direct-short menghasilkan animasi api & asap kartun 🔥💨 serta mematikan beban.
 
 3. **Mode Belajar Interaktif & Gamifikasi:**

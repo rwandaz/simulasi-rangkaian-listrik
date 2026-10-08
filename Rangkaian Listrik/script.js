@@ -150,6 +150,7 @@
     wire: { title: 'Kabel', defaultLen: 110, isFlexible: true, isConductor: true },
     battery: { title: 'Baterai 1.5V', defaultLen: 120, isFlexible: false, isSource: true },
     bulb: { title: 'Lampu Bohlam', defaultLen: 100, isFlexible: false, isLoad: true },
+    resistor: { title: 'Resistor 10Ω', defaultLen: 110, isFlexible: false, isConductor: true, isLoad: true, icon: '⚡' },
     switch: { title: 'Saklar', defaultLen: 110, isFlexible: false },
     nail: { title: 'Paku Besi', defaultLen: 100, isFlexible: false, isConductor: true, icon: '🔩' },
     coin: { title: 'Koin Emas', defaultLen: 80, isFlexible: false, isConductor: true, icon: '🪙' },
@@ -168,7 +169,7 @@
       title: 'Nyalakan Satu Lampu!',
       instruction: 'Hubungkan kabel dari baterai ke bohlam agar menyala terang!',
       check: (app) => {
-        const bulbs = app.components.filter(c => c.type === 'bulb' && c.litState === 'lit');
+        const bulbs = app.components.filter(c => c.type === 'bulb' && (c.litState === 'lit' || c.litState === 'bright'));
         return bulbs.length >= 1;
       }
     },
@@ -646,7 +647,10 @@
       const sliderVolt = document.getElementById('slider-voltage');
       if (sliderVolt) {
         sliderVolt.addEventListener('input', (e) => {
-          this.setBatteryVoltage(parseFloat(e.target.value));
+          this.setBatteryVoltage(parseFloat(e.target.value), false);
+        });
+        sliderVolt.addEventListener('change', () => {
+          this.sound.playClick();
         });
       }
 
@@ -656,9 +660,9 @@
           e.stopPropagation();
           const comp = this.components.find(c => c.id === this.selectedComponentId);
           if (comp && (comp.type === 'battery' || comp.type === 'solar')) {
-            const step = comp.type === 'solar' ? 1.0 : 1.5;
+            const step = 0.5;
             const currentV = comp.voltage !== undefined ? comp.voltage : (comp.type === 'solar' ? 3.0 : 1.5);
-            this.setBatteryVoltage(Math.max(0, currentV - step));
+            this.setBatteryVoltage(Math.max(0, currentV - step), true);
           }
         });
       }
@@ -669,9 +673,9 @@
           e.stopPropagation();
           const comp = this.components.find(c => c.id === this.selectedComponentId);
           if (comp && (comp.type === 'battery' || comp.type === 'solar')) {
-            const step = comp.type === 'solar' ? 1.0 : 1.5;
+            const step = 0.5;
             const currentV = comp.voltage !== undefined ? comp.voltage : (comp.type === 'solar' ? 3.0 : 1.5);
-            this.setBatteryVoltage(Math.min(24, currentV + step));
+            this.setBatteryVoltage(Math.min(24, currentV + step), true);
           }
         });
       }
@@ -930,6 +934,7 @@
         v2Id: v2.id,
         def,
         voltage: type === 'battery' ? 1.5 : (type === 'solar' ? 3.0 : 0),
+        resistance: type === 'resistor' ? 10.0 : 0,
         state: type === 'switch' ? 'closed' : 'default',
         litState: 'off',
         isConducting: false,
@@ -1192,7 +1197,7 @@
         haloTop = 64; // Baling-baling menghadap ke atas bebas hambatan
         haloBottom = 26;
       } else if (comp.type === 'bulb') {
-        haloTop = 48; // Kubah lampu kaca tinggi
+        haloTop = 56; // Kubah lampu kaca dan sinar radiasi
         haloBottom = 26;
       } else if (comp.type === 'battery' || comp.type === 'solar') {
         haloTop = 40;
@@ -1283,18 +1288,20 @@
       }
     }
 
-    setBatteryVoltage(volt) {
+    setBatteryVoltage(volt, playSound = true) {
       if (!this.selectedComponentId) return;
       const comp = this.components.find(c => c.id === this.selectedComponentId);
       if (!comp || (comp.type !== 'battery' && comp.type !== 'solar')) return;
 
       comp.voltage = Math.max(0, Math.min(24, Math.round(volt * 10) / 10));
-      document.getElementById('spec-volt-display').textContent = `${comp.voltage.toFixed(1)} V`;
-      document.getElementById('slider-voltage').value = comp.voltage;
+      const displayElem = document.getElementById('spec-volt-display');
+      if (displayElem) displayElem.textContent = `${comp.voltage.toFixed(1)} V`;
+      const sliderElem = document.getElementById('slider-voltage');
+      if (sliderElem) sliderElem.value = comp.voltage;
 
-      this.sound.playClick();
-      this.render();
+      if (playSound) this.sound.playClick();
       this.updateSimulation();
+      this.render();
     }
 
     // Memulai aplikasi dengan kanvas bersih dan kosong sesuai permintaan
@@ -1995,7 +2002,6 @@
       }
 
       let circuitHasShort = false;
-      const bulbBrightness = new Map(); // bulbId -> 'lit' | 'dim'
       const activeComponents = new Set();
       let totalConductedVoltage = 0;
 
@@ -2013,11 +2019,6 @@
           this.triggerSmoke(src);
         } else if (result.activeComps.length > 0) {
           totalConductedVoltage += srcV;
-          result.bulbBrightnessMap.forEach((bright, bId) => {
-            if (bulbBrightness.get(bId) !== 'lit') {
-              bulbBrightness.set(bId, bright);
-            }
-          });
           result.activeComps.forEach(c => activeComponents.add(c.id));
         }
       });
@@ -2029,21 +2030,27 @@
         this.showToast('⚠️ AWAS KORSLETING! Sumber listrik terhubung langsung tanpa beban!', 'alert');
       }
 
-      // Apply electrical state
+      // Apply electrical state based on continuous physical voltage & Ohm's law
+      let anyBulbLit = false;
       this.components.forEach(c => {
         if (activeComponents.has(c.id)) c.isConducting = true;
         if (c.type === 'bulb') {
           // If short-circuited across power source or 0V, bulbs shut off
-          if (circuitHasShort || this.circuitVoltage <= 0) {
+          if (circuitHasShort || this.circuitVoltage <= 0 || !c.isConducting || (c.measuredVoltage || 0) <= 0.05) {
             c.litState = 'off';
           } else {
-            c.litState = bulbBrightness.get(c.id) || 'off';
+            const v = c.measuredVoltage || 0;
+            if (v < 1.1) c.litState = 'dim';
+            else if (v <= 3.0) c.litState = 'lit';
+            else c.litState = 'bright';
+            anyBulbLit = true;
           }
         }
       });
 
-      const wasLit = Array.from(bulbBrightness.keys()).length > 0 && !circuitHasShort && this.circuitVoltage > 0;
-      if (wasLit) this.sound.playChime();
+      if (anyBulbLit && !circuitHasShort && this.circuitVoltage > 0) {
+        this.sound.playChime();
+      }
 
       this.renderBulbVisuals();
       this.updateMeterReadouts();
@@ -2055,7 +2062,7 @@
       if (srcV <= 0) {
         this.vertexPotentials.set(battery.v1Id, 0);
         this.vertexPotentials.set(battery.v2Id, 0);
-        return { isShortCircuit: false, bulbBrightnessMap: new Map(), activeComps: [], shortedComps: [] };
+        return { isShortCircuit: false, activeComps: [], shortedComps: [] };
       }
 
       // Find all paths from battery/source v2 (+) to v1 (-)
@@ -2123,32 +2130,52 @@
         this.vertexPotentials.set(battery.v2Id, srcV);
         propagatePotential(battery.v2Id, srcV);
         propagatePotential(battery.v1Id, 0);
-        return { isShortCircuit: false, bulbBrightnessMap: new Map(), activeComps: [], shortedComps: [] };
+        return { isShortCircuit: false, activeComps: [], shortedComps: [] };
       }
 
       let isShortCircuit = false;
-      const bulbBrightnessMap = new Map();
       const activeComps = new Set();
       const shortedComps = new Set();
 
       allPaths.forEach(path => {
         let pathR = 0;
         let hasLoad = false;
+        let pathEMF = srcV;
+
         path.forEach(step => {
           if (step.comp.type === 'bulb') {
             pathR += 10.0;
+            hasLoad = true;
+          } else if (step.comp.type === 'resistor') {
+            pathR += (step.comp.resistance || 10.0);
             hasLoad = true;
           } else if (step.comp.type === 'dinamo') {
             pathR += 10.0;
             hasLoad = true;
           } else if (step.comp.type === 'voltmeter') {
             pathR += 10000.0;
+          } else if (step.comp.type === 'battery' || step.comp.type === 'solar') {
+            const otherV = step.comp.voltage !== undefined ? step.comp.voltage : (step.comp.type === 'solar' ? 3.0 : 1.5);
+            if (step.fromVId === step.comp.v1Id && step.toVId === step.comp.v2Id) {
+              pathEMF += otherV; // series aiding (+ to -)
+            } else {
+              pathEMF -= otherV; // series opposing (+ to +)
+            }
+            pathR += 0.05;
+          } else if (step.comp.type === 'nail') {
+            pathR += 0.08;
+          } else if (step.comp.type === 'coin') {
+            pathR += 0.02;
           } else {
-            pathR += 0.05; // wire, switch, ammeter, nail, coin
+            pathR += 0.05; // wire, switch, ammeter
           }
         });
 
-        if (!hasLoad && pathR < 0.3) {
+        if (pathEMF <= 0) {
+          return;
+        }
+
+        if (!hasLoad && pathR < 0.35) {
           // Direct connection with no load = Short Circuit!
           isShortCircuit = true;
           const I_short = 50.0;
@@ -2163,21 +2190,11 @@
           battery.currentToVId = battery.v2Id;
           battery.measuredCurrent = (battery.measuredCurrent || 0) + I_short;
         } else {
-          // Fisika Rangkaian: Hukum Ohm I = V / R
-          const I_path = srcV / pathR;
+          // Fisika Rangkaian: Hukum Ohm I = EMF / R
+          const I_path = pathEMF / pathR;
 
-          const bulbsInPath = path.filter(step => step.comp.type === 'bulb');
-          if (bulbsInPath.length > 0) {
-            const brightness = bulbsInPath.length === 1 ? 'lit' : 'dim';
-            bulbsInPath.forEach(bStep => {
-              if (bulbBrightnessMap.get(bStep.comp.id) !== 'lit') {
-                bulbBrightnessMap.set(bStep.comp.id, brightness);
-              }
-            });
-          }
-
-          let currPotential = srcV;
-          this.vertexPotentials.set(startVertexId, srcV);
+          let currPotential = pathEMF;
+          this.vertexPotentials.set(startVertexId, pathEMF);
 
           path.forEach(step => {
             activeComps.add(step.comp);
@@ -2187,19 +2204,32 @@
 
             let compR = 0.05;
             if (step.comp.type === 'bulb' || step.comp.type === 'dinamo') compR = 10.0;
+            else if (step.comp.type === 'resistor') compR = (step.comp.resistance || 10.0);
             else if (step.comp.type === 'voltmeter') compR = 10000.0;
+            else if (step.comp.type === 'nail') compR = 0.08;
+            else if (step.comp.type === 'coin') compR = 0.02;
 
-            const drop = Math.min(currPotential, I_path * compR);
-            const nextPotential = Math.max(0, currPotential - drop);
-            this.vertexPotentials.set(step.toVId, nextPotential);
-            step.comp.measuredVoltage = Math.abs(currPotential - nextPotential);
-            currPotential = nextPotential;
+            if (step.comp.type === 'battery' || step.comp.type === 'solar') {
+              const otherV = step.comp.voltage !== undefined ? step.comp.voltage : (step.comp.type === 'solar' ? 3.0 : 1.5);
+              const sign = (step.fromVId === step.comp.v1Id && step.toVId === step.comp.v2Id) ? 1 : -1;
+              const nextPotential = Math.max(0, currPotential + sign * otherV - I_path * compR);
+              this.vertexPotentials.set(step.toVId, nextPotential);
+              step.comp.measuredVoltage = otherV;
+              currPotential = nextPotential;
+            } else {
+              const drop = Math.min(currPotential, I_path * compR);
+              const nextPotential = Math.max(0, currPotential - drop);
+              this.vertexPotentials.set(step.toVId, nextPotential);
+              step.comp.measuredVoltage = Math.max(step.comp.measuredVoltage || 0, drop);
+              currPotential = nextPotential;
+            }
           });
 
           activeComps.add(battery);
           battery.currentFromVId = battery.v1Id;
           battery.currentToVId = battery.v2Id;
           battery.measuredCurrent = (battery.measuredCurrent || 0) + I_path;
+          battery.measuredVoltage = srcV;
         }
       });
 
@@ -2210,7 +2240,6 @@
 
       return {
         isShortCircuit,
-        bulbBrightnessMap,
         activeComps: Array.from(activeComps),
         shortedComps: Array.from(shortedComps)
       };
@@ -2220,6 +2249,7 @@
       if (comp.type === 'wire') return true;
       if (comp.type === 'battery' || comp.type === 'solar') return true;
       if (comp.type === 'bulb') return true;
+      if (comp.type === 'resistor') return true;
       if (comp.type === 'dinamo') return true;
       if (comp.type === 'ammeter') return true;
       if (comp.type === 'voltmeter') return true;
@@ -2359,39 +2389,198 @@
           <text x="${len - 24}" y="0" font-size="16" font-weight="900" fill="#ef4444" text-anchor="middle" dominant-baseline="central">+</text>
         `;
       } else if (comp.type === 'bulb') {
-        const isLit = comp.litState === 'lit';
-        const isDim = comp.litState === 'dim';
-        const globeStroke = isLit || isDim ? '#ca8a04' : '#94a3b8';
-        const glowFilter = isLit ? 'filter="url(#glow-bulb)"' : '';
+        const cx = len * 0.5;
+        const cy = -24;
+        const v = (comp.isConducting && !comp.isShorted && comp.measuredVoltage !== undefined) ? comp.measuredVoltage : 0;
+        const isLit = v > 0.05;
+        const vi = isLit ? Math.min(3.2, Math.pow(v / 1.5, 0.72)) : 0; // Curve visual intensity
+
+        // Color & styles that scale smoothly with voltage
+        let globeFill = 'rgba(248, 250, 252, 0.85)';
+        let globeStroke = '#94a3b8';
+        let filamentStroke = '#64748b';
+        let filamentWidth = 2.0;
+
+        if (isLit) {
+          if (v < 1.1) {
+            globeFill = '#fef3c7'; // dim warm amber
+            globeStroke = '#d97706';
+            filamentStroke = '#ea580c';
+            filamentWidth = 2.5;
+          } else if (v <= 3.0) {
+            globeFill = '#fef08a'; // bright warm yellow
+            globeStroke = '#ca8a04';
+            filamentStroke = '#facc15';
+            filamentWidth = 3.0;
+          } else if (v <= 9.0) {
+            globeFill = '#fffbeb'; // brilliant incandescent white-yellow
+            globeStroke = '#eab308';
+            filamentStroke = '#ffffff';
+            filamentWidth = 3.5;
+          } else {
+            globeFill = '#ffffff'; // blazing white-hot core
+            globeStroke = '#facc15';
+            filamentStroke = '#ffffff';
+            filamentWidth = 4.0;
+          }
+        }
+
+        // Radiating light rays calculated from voltage
+        let raysSvg = '';
+        if (isLit) {
+          let rayCount = 5;
+          let rayLength = 22;
+          let startAngle = -140;
+          let endAngle = -40;
+
+          if (v < 1.1) {
+            rayCount = 3;
+            rayLength = 13;
+            startAngle = -120;
+            endAngle = -60;
+          } else if (v <= 3.0) {
+            rayCount = 5;
+            rayLength = 22;
+            startAngle = -140;
+            endAngle = -40;
+          } else if (v <= 9.0) {
+            rayCount = 7;
+            rayLength = 34;
+            startAngle = -150;
+            endAngle = -30;
+          } else {
+            rayCount = 11;
+            rayLength = 48;
+            startAngle = -165;
+            endAngle = -15;
+          }
+
+          const rInner = 24;
+          const rOuter = rInner + rayLength;
+          const angleStep = rayCount > 1 ? (endAngle - startAngle) / (rayCount - 1) : 0;
+          const rayWidth = Math.min(4.5, (2.0 + vi * 0.7).toFixed(1));
+          const rayOpacity = Math.min(0.95, (0.45 + vi * 0.15).toFixed(2));
+
+          let raysLines = '';
+          for (let i = 0; i < rayCount; i++) {
+            const angDeg = startAngle + i * angleStep;
+            const angRad = (angDeg * Math.PI) / 180;
+            const x1 = (cx + rInner * Math.cos(angRad)).toFixed(1);
+            const y1 = (cy + rInner * Math.sin(angRad)).toFixed(1);
+            const x2 = (cx + rOuter * Math.cos(angRad)).toFixed(1);
+            const y2 = (cy + rOuter * Math.sin(angRad)).toFixed(1);
+            raysLines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+          }
+
+          let sparkleLines = '';
+          if (v > 6.0) {
+            const extraCount = rayCount - 1;
+            for (let i = 0; i < extraCount; i++) {
+              const angDeg = startAngle + (i + 0.5) * angleStep;
+              const angRad = (angDeg * Math.PI) / 180;
+              const x1 = (cx + (rInner + 4) * Math.cos(angRad)).toFixed(1);
+              const y1 = (cy + (rInner + 4) * Math.sin(angRad)).toFixed(1);
+              const x2 = (cx + (rOuter * 0.75) * Math.cos(angRad)).toFixed(1);
+              const y2 = (cy + (rOuter * 0.75) * Math.sin(angRad)).toFixed(1);
+              sparkleLines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+            }
+          }
+
+          raysSvg = `
+            <g stroke="#facc15" stroke-width="${rayWidth}" stroke-linecap="round" opacity="${rayOpacity}">
+              ${raysLines}
+            </g>
+            ${sparkleLines ? `
+              <g stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="${Math.min(0.9, rayOpacity)}">
+                ${sparkleLines}
+              </g>
+            ` : ''}
+          `;
+        }
+
+        // Luminous Ambient Halo Aura
+        let haloSvg = '';
+        if (isLit) {
+          const haloR = Math.min(85, Math.round(20 + vi * 20));
+          const haloOpacity = Math.min(0.85, (0.24 + vi * 0.18).toFixed(2));
+          haloSvg = `
+            <circle cx="${cx}" cy="${cy}" r="${haloR}" fill="url(#bulb-radial-halo)" opacity="${haloOpacity}" pointer-events="none" />
+            <circle cx="${cx}" cy="${cy}" r="${Math.round(haloR * 0.55)}" fill="#fef08a" opacity="${Math.min(0.65, (haloOpacity * 0.8).toFixed(2))}" filter="url(#glow-bulb)" pointer-events="none" />
+            ${v > 3.0 ? `<circle cx="${cx}" cy="${cy}" r="15" fill="#ffffff" opacity="${Math.min(0.95, (0.35 + vi * 0.18).toFixed(2))}" pointer-events="none" />` : ''}
+          `;
+        }
 
         return `
           ${isSelected ? `
             <g class="selection-highlight">
-              <rect x="-6" y="-52" width="${len + 12}" height="64" rx="12" class="selection-halo" />
-              <circle cx="-6" cy="-52" r="3.5" class="selection-corner" />
-              <circle cx="${len + 6}" cy="-52" r="3.5" class="selection-corner" />
-              <circle cx="-6" cy="12" r="3.5" class="selection-corner" />
-              <circle cx="${len + 6}" cy="12" r="3.5" class="selection-corner" />
+              <rect x="-6" y="-58" width="${len + 12}" height="72" rx="12" class="selection-halo" />
+              <circle cx="-6" cy="-58" r="3.5" class="selection-corner" />
+              <circle cx="${len + 6}" cy="-58" r="3.5" class="selection-corner" />
+              <circle cx="-6" cy="14" r="3.5" class="selection-corner" />
+              <circle cx="${len + 6}" cy="14" r="3.5" class="selection-corner" />
             </g>
           ` : ''}
           <line x1="0" y1="0" x2="${len}" y2="0" class="component-body-outline" stroke="transparent" stroke-width="40" />
-          <!-- Radiating Light Rays if lit -->
-          ${isLit ? `
-            <g stroke="#facc15" stroke-width="3" stroke-linecap="round" opacity="0.8">
-              <line x1="${len/2}" y1="-50" x2="${len/2}" y2="-65" />
-              <line x1="${len/2 - 25}" y1="-45" x2="${len/2 - 38}" y2="-58" />
-              <line x1="${len/2 + 25}" y1="-45" x2="${len/2 + 38}" y2="-58" />
-            </g>
-          ` : ''}
+          
+          <!-- Radiance Halo Aura -->
+          ${haloSvg}
+
+          <!-- Radiating Light Rays -->
+          ${raysSvg}
+
           <!-- Bulb Base Thread -->
           <rect x="${len * 0.3}" y="-10" width="${len * 0.4}" height="20" fill="#94a3b8" stroke="#475569" stroke-width="1.5" rx="3" />
+          <line x1="${len * 0.35}" y1="-4" x2="${len * 0.65}" y2="-4" stroke="#64748b" stroke-width="1.5" />
+          <line x1="${len * 0.35}" y1="2" x2="${len * 0.65}" y2="2" stroke="#64748b" stroke-width="1.5" />
+
           <!-- Glass Globe -->
-          <circle cx="${len * 0.5}" cy="-24" r="22" fill="${isLit ? '#fef08a' : (isDim ? '#fef9c3' : '#f8fafc')}" stroke="${globeStroke}" stroke-width="2" ${glowFilter} />
+          <circle cx="${cx}" cy="${cy}" r="22" fill="${globeFill}" stroke="${globeStroke}" stroke-width="2" />
+          
+          <!-- Unlit Glass Reflection Sheen -->
+          ${!isLit ? `
+            <path d="M ${cx - 14} -32 A 16 16 0 0 1 ${cx} -38" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.6" stroke-linecap="round" />
+          ` : ''}
+
           <!-- Filament inside globe -->
-          <path d="M ${len * 0.44} -10 L ${len * 0.47} -26 L ${len * 0.53} -26 L ${len * 0.56} -10" fill="none" stroke="${isLit || isDim ? '#ffffff' : '#64748b'}" stroke-width="2.5" />
+          <path d="M ${len * 0.44} -10 L ${len * 0.47} -26 L ${len * 0.53} -26 L ${len * 0.56} -10" fill="none" stroke="${filamentStroke}" stroke-width="${filamentWidth}" />
+
           <!-- Connective terminal legs to v1 and v2 -->
           <line x1="0" y1="0" x2="${len * 0.3}" y2="0" stroke="#64748b" stroke-width="6" />
           <line x1="${len * 0.7}" y1="0" x2="${len}" y2="0" stroke="#64748b" stroke-width="6" />
+        `;
+      } else if (comp.type === 'resistor') {
+        // Resistor Keramik Gelang Warna (10 Ohm / Nilai Hambatan)
+        const cx = len / 2;
+        const rw = Math.max(48, len * 0.44);
+        const rx1 = cx - rw / 2;
+        const rx2 = cx + rw / 2;
+        const resVal = comp.resistance || 10;
+        return `
+          ${isSelected ? `
+            <g class="selection-highlight">
+              <rect x="-6" y="-22" width="${len + 12}" height="44" rx="8" class="selection-halo" />
+              <circle cx="-6" cy="-22" r="3.5" class="selection-corner" />
+              <circle cx="${len + 6}" cy="-22" r="3.5" class="selection-corner" />
+              <circle cx="-6" cy="22" r="3.5" class="selection-corner" />
+              <circle cx="${len + 6}" cy="22" r="3.5" class="selection-corner" />
+            </g>
+          ` : ''}
+          <line x1="0" y1="0" x2="${len}" y2="0" class="component-body-outline" stroke="transparent" stroke-width="36" />
+          <!-- Leads -->
+          <line x1="0" y1="0" x2="${rx1}" y2="0" stroke="#64748b" stroke-width="4.5" />
+          <line x1="${rx2}" y1="0" x2="${len}" y2="0" stroke="#64748b" stroke-width="4.5" />
+          <!-- Resistor Ceramic Body -->
+          <rect x="${rx1}" y="-11" width="${rw}" height="22" rx="7" fill="#e2d9c8" stroke="#78716c" stroke-width="1.5" />
+          <!-- Specular Sheen -->
+          <line x1="${rx1 + 4}" y1="-6" x2="${rx2 - 4}" y2="-6" stroke="#ffffff" stroke-width="1.8" opacity="0.6" stroke-linecap="round" />
+          <!-- Color Bands for 10 Ohm: Coklat (1), Hitam (0), Hitam (*1), Emas (5%) -->
+          <line x1="${rx1 + rw * 0.22}" y1="-10.5" x2="${rx1 + rw * 0.22}" y2="10.5" stroke="#78350f" stroke-width="3" />
+          <line x1="${rx1 + rw * 0.40}" y1="-10.5" x2="${rx1 + rw * 0.40}" y2="10.5" stroke="#1c1917" stroke-width="3" />
+          <line x1="${rx1 + rw * 0.58}" y1="-10.5" x2="${rx1 + rw * 0.58}" y2="10.5" stroke="#1c1917" stroke-width="3" />
+          <line x1="${rx1 + rw * 0.78}" y1="-10.5" x2="${rx1 + rw * 0.78}" y2="10.5" stroke="#d97706" stroke-width="3" />
+          <!-- Resistance Value Badge -->
+          <rect x="${cx - 16}" y="14" width="32" height="13" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="#94a3b8" stroke-width="0.8" />
+          <text x="${cx}" y="20.5" font-family="'Fredoka', sans-serif" font-size="8" font-weight="700" fill="#f8fafc" text-anchor="middle" dominant-baseline="central">${resVal} Ω</text>
         `;
       } else if (comp.type === 'switch') {
         const isClosed = comp.state === 'closed';
@@ -2597,6 +2786,9 @@
           <rect x="${len - 16}" y="-7" width="8" height="14" fill="#ef4444" rx="2" stroke="#dc2626" stroke-width="1" />
           <text x="${len - 12}" y="0" font-family="'Fredoka', sans-serif" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">+</text>
 
+          <!-- Whirling Motion Blur Disc on High Speed Rotation -->
+          <circle id="dinamo-blur-${comp.id}" cx="${propHubX}" cy="${propHubY}" r="27" fill="url(#dinamo-spin-blur)" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="6 3" opacity="0" pointer-events="none" />
+
           <!-- Baling-Baling Dinamo 3 Daun Berputar Menghadap ke Atas -->
           <g id="dinamo-prop-${comp.id}" transform="rotate(${comp.spinAngle || 0}, ${propHubX}, ${propHubY})">
             <!-- Daun Baling 1 -->
@@ -2774,29 +2966,64 @@
     startAnimationLoop() {
       const loop = () => {
         const isAnyConducting = this.components.some(c => c.isConducting);
-        if (isAnyConducting && this.circuitVoltage > 0) {
-          const speed = Math.min(3.0, Math.max(0.4, (this.circuitVoltage / 1.5) * 0.8));
+        const isAnyShorted = this.components.some(c => c.isShorted);
+        let totalCurrent = 0;
+        this.components.forEach(c => {
+          if (c.type === 'battery' || c.type === 'solar') {
+            if (c.measuredCurrent) totalCurrent += c.measuredCurrent;
+          }
+        });
+
+        if (isAnyShorted) {
+          this.electronAnimOffset += 7.0;
+        } else if (isAnyConducting && totalCurrent > 0) {
+          // Speed directly scales with physical current (0.15A = ~1.2px/frame)
+          const speed = Math.min(5.5, Math.max(0.35, (totalCurrent / 0.15) * 1.2));
           this.electronAnimOffset += speed;
-        } else if (isAnyConducting && this.components.some(c => c.isShorted)) {
-          this.electronAnimOffset += 3.5;
         }
 
-        // Putar baling-baling dinamo secara dinamis jika dinamo aktif dan ada tegangan
-        if (this.circuitVoltage > 0) {
-          const spinSpeed = Math.min(25, Math.max(4, (this.circuitVoltage / 1.5) * 12));
-          this.components.forEach(c => {
-            if (c.type === 'dinamo' && c.isConducting) {
-              c.spinAngle = ((c.spinAngle || 0) + spinSpeed) % 360;
+        // Putar baling-baling dinamo secara dinamis per komponen berdasarkan tegangan terukur
+        this.components.forEach(c => {
+          if (c.type === 'dinamo') {
+            const v = (c.isConducting && !c.isShorted && c.measuredVoltage !== undefined) ? c.measuredVoltage : 0;
+            if (v > 0.05) {
+              const vRatio = v / 1.5;
+              const speedMag = Math.min(55, Math.max(2.5, Math.pow(vRatio, 0.8) * 11));
+              
+              // Arah putaran berdasarkan arah arus konvensional
+              let dir = 1;
+              if (c.currentFromVId && c.currentToVId) {
+                // v1 is negative (-), v2 is positive (+)
+                if (c.currentFromVId === c.v1Id && c.currentToVId === c.v2Id) {
+                  dir = -1; // arus terbalik = putaran terbalik
+                }
+              }
+
+              c.spinAngle = ((c.spinAngle || 0) + dir * speedMag) % 360;
               const propGroup = document.getElementById(`dinamo-prop-${c.id}`);
               if (propGroup) {
                 const len = c.def ? c.def.defaultLen : 110;
                 const propHubX = len / 2;
                 const propHubY = -34;
-                propGroup.setAttribute('transform', `rotate(${c.spinAngle}, ${propHubX}, ${propHubY})`);
+                propGroup.setAttribute('transform', `rotate(${c.spinAngle.toFixed(1)}, ${propHubX}, ${propHubY})`);
               }
+
+              const blurEl = document.getElementById(`dinamo-blur-${c.id}`);
+              if (blurEl) {
+                if (v >= 2.5) {
+                  const blurOpacity = Math.min(0.75, (0.2 + (v / 24) * 0.55).toFixed(2));
+                  blurEl.setAttribute('opacity', blurOpacity);
+                } else {
+                  blurEl.setAttribute('opacity', '0');
+                }
+              }
+            } else {
+              // Baling-baling berhenti jika tidak ada tegangan / rangkaian terbuka
+              const blurEl = document.getElementById(`dinamo-blur-${c.id}`);
+              if (blurEl) blurEl.setAttribute('opacity', '0');
             }
-          });
-        }
+          }
+        });
 
         this.renderParticles();
         requestAnimationFrame(loop);
