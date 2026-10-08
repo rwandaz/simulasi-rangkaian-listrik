@@ -144,7 +144,7 @@
   // ==========================================================================
   // 2. Constants & Component Definitions
   // ==========================================================================
-  const SNAP_DISTANCE = 28; // Distance in pixels to trigger magnetic snap
+  const SNAP_DISTANCE = 32; // Distance in pixels to trigger magnetic snap
 
   const COMPONENT_DEFAULTS = {
     wire: { title: 'Kabel', defaultLen: 110, isFlexible: true, isConductor: true },
@@ -296,6 +296,13 @@
       this.touchPinchDistance = null;
       this.touchPinchScale = 1.0;
 
+      // Undo & Interaction Optimizations
+      this.undoStack = [];
+      this.wasAnyBulbLit = false;
+      this.wasCircuitShort = false;
+      this.toastTimer = null;
+      this.spawnOffsetIndex = 0;
+
       this.initLoadingScreen();
       this.initEvents();
       this.startAnimationLoop();
@@ -392,11 +399,14 @@
       document.querySelectorAll('.tray-item').forEach(item => {
         const type = item.getAttribute('data-type');
         item.addEventListener('pointerdown', (e) => {
-          e.preventDefault();
+          if (e.pointerType !== 'touch') {
+            e.preventDefault();
+          }
           trayDragState = {
             type,
             startX: e.clientX,
             startY: e.clientY,
+            pointerType: e.pointerType,
             hasMoved: false
           };
         });
@@ -422,8 +432,20 @@
         }
 
         if (!trayDragState) return;
-        const dist = Math.hypot(e.clientX - trayDragState.startX, e.clientY - trayDragState.startY);
-        if (dist > 8 && !trayDragState.hasMoved) {
+        const dx = e.clientX - trayDragState.startX;
+        const dy = e.clientY - trayDragState.startY;
+        const dist = Math.hypot(dx, dy);
+
+        // Pada perangkat layar sentuh: bila pengguna menggeser ke samping dalam tray,
+        // prioritaskan scroll mulus toolbox tanpa memunculkan bayangan drag
+        if (trayDragState.pointerType === 'touch' && !trayDragState.hasMoved) {
+          if (Math.abs(dx) > 12 && Math.abs(dy) < 18) {
+            trayDragState = null;
+            return;
+          }
+        }
+
+        if (dist > 10 && !trayDragState.hasMoved) {
           trayDragState.hasMoved = true;
           this.showDragGhost(trayDragState.type, e.clientX, e.clientY);
         }
@@ -583,6 +605,16 @@
         });
       }
 
+      // 1.5 Batal / Undo Action Button
+      const btnUndo = document.getElementById('btn-undo');
+      if (btnUndo) {
+        btnUndo.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          this.undo();
+        });
+      }
+
       // 2. Clear Workbench
       const btnClear = document.getElementById('btn-clear');
       if (btnClear) {
@@ -611,6 +643,14 @@
       btnCut.addEventListener('click', handleCut);
       btnCut.addEventListener('pointerdown', (e) => e.stopPropagation());
 
+      // Cegah pointerdown pada overlay tombol tindakan & spek agar tidak menutup seleksi kanvas
+      if (this.compActionsContainer) {
+        this.compActionsContainer.addEventListener('pointerdown', (e) => e.stopPropagation());
+      }
+      if (this.batterySpecPopup) {
+        this.batterySpecPopup.addEventListener('pointerdown', (e) => e.stopPropagation());
+      }
+
       // 4. Floating Rotate 90° Buttons (Floating Action & Toolbar)
       const handleRotate = (e) => {
         e.stopPropagation();
@@ -627,15 +667,15 @@
       const btnRotateToolbar = document.getElementById('btn-rotate-toolbar');
       if (btnRotateToolbar) btnRotateToolbar.addEventListener('click', handleRotate);
 
-      // 5. Battery & Solar Spec Button & Popup Controls
+      // 5. Battery, Solar & Resistor Spec Button & Popup Controls
       const btnCompSpec = document.getElementById('btn-comp-spec');
       if (btnCompSpec) {
         btnCompSpec.addEventListener('click', (e) => {
           e.stopPropagation();
           const comp = this.components.find(c => c.id === this.selectedComponentId);
-          if (comp && (comp.type === 'battery' || comp.type === 'solar')) {
+          if (comp && (comp.type === 'battery' || comp.type === 'solar' || comp.type === 'resistor')) {
             if (this.batterySpecPopup.classList.contains('hidden')) {
-              this.showBatterySpec(comp);
+              this.showComponentSpec(comp);
             } else {
               this.hideBatterySpec();
             }
@@ -654,7 +694,7 @@
       const sliderVolt = document.getElementById('slider-voltage');
       if (sliderVolt) {
         sliderVolt.addEventListener('input', (e) => {
-          this.setBatteryVoltage(parseFloat(e.target.value), false);
+          this.setComponentSpecValue(parseFloat(e.target.value), false);
         });
         sliderVolt.addEventListener('change', () => {
           this.sound.playClick();
@@ -666,10 +706,15 @@
         btnVoltMinus.addEventListener('click', (e) => {
           e.stopPropagation();
           const comp = this.components.find(c => c.id === this.selectedComponentId);
-          if (comp && (comp.type === 'battery' || comp.type === 'solar')) {
+          if (!comp) return;
+          if (comp.type === 'resistor') {
+            const currentR = comp.resistance !== undefined ? comp.resistance : 10;
+            const step = currentR > 10 ? 5 : 1;
+            this.setComponentSpecValue(Math.max(1, currentR - step), true);
+          } else if (comp.type === 'battery' || comp.type === 'solar') {
             const step = 0.5;
             const currentV = comp.voltage !== undefined ? comp.voltage : (comp.type === 'solar' ? 3.0 : 1.5);
-            this.setBatteryVoltage(Math.max(0, currentV - step), true);
+            this.setComponentSpecValue(Math.max(0, currentV - step), true);
           }
         });
       }
@@ -679,10 +724,15 @@
         btnVoltPlus.addEventListener('click', (e) => {
           e.stopPropagation();
           const comp = this.components.find(c => c.id === this.selectedComponentId);
-          if (comp && (comp.type === 'battery' || comp.type === 'solar')) {
+          if (!comp) return;
+          if (comp.type === 'resistor') {
+            const currentR = comp.resistance !== undefined ? comp.resistance : 10;
+            const step = currentR >= 10 ? 5 : 1;
+            this.setComponentSpecValue(Math.min(100, currentR + step), true);
+          } else if (comp.type === 'battery' || comp.type === 'solar') {
             const step = 0.5;
             const currentV = comp.voltage !== undefined ? comp.voltage : (comp.type === 'solar' ? 3.0 : 1.5);
-            this.setBatteryVoltage(Math.min(24, currentV + step), true);
+            this.setComponentSpecValue(Math.min(24, currentV + step), true);
           }
         });
       }
@@ -816,9 +866,11 @@
       }
 
       // Drag handles for floating meters & probes
-      const vmDragHandle = document.getElementById('vm-drag-handle');
-      if (vmDragHandle) {
-        vmDragHandle.addEventListener('pointerdown', (e) => this.startMeterWidgetDrag('voltmeter', e));
+      if (this.floatingVoltmeter) {
+        this.floatingVoltmeter.addEventListener('pointerdown', (e) => {
+          if (e.target.closest('#btn-close-vm')) return;
+          this.startMeterWidgetDrag('voltmeter', e);
+        });
       }
       if (this.vmProbeRed) {
         this.vmProbeRed.addEventListener('pointerdown', (e) => this.startProbeDrag('vm_red', e));
@@ -827,9 +879,11 @@
         this.vmProbeBlack.addEventListener('pointerdown', (e) => this.startProbeDrag('vm_black', e));
       }
 
-      const amDragHandle = document.getElementById('am-drag-handle');
-      if (amDragHandle) {
-        amDragHandle.addEventListener('pointerdown', (e) => this.startMeterWidgetDrag('ammeter', e));
+      if (this.floatingAmmeter) {
+        this.floatingAmmeter.addEventListener('pointerdown', (e) => {
+          if (e.target.closest('#btn-close-am')) return;
+          this.startMeterWidgetDrag('ammeter', e);
+        });
       }
       if (this.amProbeSensor) {
         this.amProbeSensor.addEventListener('pointerdown', (e) => this.startProbeDrag('am_sensor', e));
@@ -896,7 +950,6 @@
       window.addEventListener('pointermove', (e) => this.onPointerMove(e), { passive: false });
       window.addEventListener('pointerup', (e) => this.onPointerUp(e));
       window.addEventListener('pointercancel', (e) => this.onPointerUp(e));
-
       // Workbench canvas tap deselects
       this.workbench.addEventListener('pointerdown', (e) => {
         if (e.target === this.workbench || e.target === this.svg) {
@@ -908,6 +961,72 @@
           this.render();
           if (window.innerWidth <= 768 && this.instrumentsDock && !this.instrumentsDock.classList.contains('collapsed')) {
             this.instrumentsDock.classList.add('collapsed');
+          }
+        }
+      });
+
+      // Keyboard Shortcuts (Ctrl+Z: Batal, Delete/Backspace: Hapus, R: Rotasi 90°, Esc: Tutup/Batal Pilih)
+      window.addEventListener('keydown', (e) => {
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+          if (e.key === 'Escape') {
+            document.activeElement.blur();
+          }
+          return;
+        }
+
+        // Ctrl+Z / Cmd+Z -> Undo / Batal
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          this.undo();
+          return;
+        }
+
+        // Delete / Backspace -> Hapus Komponen Terpilih
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          if (this.selectedComponentId) {
+            e.preventDefault();
+            this.removeComponent(this.selectedComponentId);
+            this.selectedComponentId = null;
+            this.updateSelectionToolbar();
+            this.updateComponentActionsPosition();
+            this.sound.playCut();
+            this.showToast('Komponen dihapus! 🗑️', 'normal');
+          }
+          return;
+        }
+
+        // R / r -> Rotasi 90 Derajat
+        if (e.key === 'r' || e.key === 'R') {
+          if (this.selectedComponentId) {
+            e.preventDefault();
+            const comp = this.components.find(c => c.id === this.selectedComponentId);
+            if (comp) {
+              this.rotateComponent90(comp);
+              this.showToast('Komponen diputar 90° 🔄', 'normal');
+            }
+          }
+          return;
+        }
+
+        // Escape -> Batalkan seleksi / tutup popup
+        if (e.key === 'Escape') {
+          this.hideScissors();
+          this.hideBatterySpec();
+          const modalHelp = document.getElementById('modal-help');
+          if (modalHelp && !modalHelp.classList.contains('hidden')) {
+            modalHelp.classList.add('hidden');
+            return;
+          }
+          const modalSuccess = document.getElementById('modal-success');
+          if (modalSuccess && !modalSuccess.classList.contains('hidden')) {
+            modalSuccess.classList.add('hidden');
+            return;
+          }
+          if (this.selectedComponentId) {
+            this.selectedComponentId = null;
+            this.updateSelectionToolbar();
+            this.updateComponentActionsPosition();
+            this.render();
           }
         }
       });
@@ -964,6 +1083,7 @@
     }
 
     spawnComponentAt(type, cx, cy) {
+      this.backupCircuitState();
       this.hideScissors();
       const def = COMPONENT_DEFAULTS[type] || COMPONENT_DEFAULTS.wire;
       const len = def.defaultLen;
@@ -1090,9 +1210,12 @@
     }
 
     spawnComponentCenter(type) {
+      this.spawnOffsetIndex = ((this.spawnOffsetIndex || 0) + 1) % 6;
       const rect = this.workbench.getBoundingClientRect();
-      const cx = (rect.width || 500) / 2 + (Math.random() * 40 - 20);
-      const cy = (rect.height || 400) / 2 + (Math.random() * 40 - 20);
+      const offsetX = (this.spawnOffsetIndex - 2.5) * 32;
+      const offsetY = ((this.spawnOffsetIndex % 3) - 1) * 26;
+      const cx = (rect.width || 500) / 2 + offsetX;
+      const cy = (rect.height || 400) / 2 + offsetY;
       const worldPos = this.screenToWorld(rect.left + cx, rect.top + cy);
       return this.spawnComponentAt(type, worldPos.x, worldPos.y);
     }
@@ -1118,6 +1241,7 @@
     // Rotasi 90 Derajat untuk komponen terpilih
     rotateComponent90(comp) {
       if (!comp) return;
+      this.backupCircuitState();
       const v1 = this.vertices.get(comp.v1Id);
       const v2 = this.vertices.get(comp.v2Id);
       if (!v1 || !v2) return;
@@ -1265,12 +1389,12 @@
       this.compActionsContainer.style.top = `${targetScreenY}px`;
       this.compActionsContainer.classList.remove('hidden');
 
-      // Tampilkan tombol spek volt jika komponen adalah sumber daya listrik (baterai atau panel surya)
+      // Tampilkan tombol spek jika komponen adalah sumber daya listrik atau resistor
       const btnSpec = document.getElementById('btn-comp-spec');
       if (btnSpec) {
-        const isPowerSource = (comp.type === 'battery' || comp.type === 'solar');
-        btnSpec.style.display = isPowerSource ? 'inline-flex' : 'none';
-        btnSpec.classList.toggle('hidden', !isPowerSource);
+        const hasSpec = (comp.type === 'battery' || comp.type === 'solar' || comp.type === 'resistor');
+        btnSpec.style.display = hasSpec ? 'inline-flex' : 'none';
+        btnSpec.classList.toggle('hidden', !hasSpec);
       }
 
       if (!this.batterySpecPopup.classList.contains('hidden')) {
@@ -1281,21 +1405,45 @@
       }
     }
 
-    showBatterySpec(comp) {
-      if (!comp || (comp.type !== 'battery' && comp.type !== 'solar')) return;
+    showComponentSpec(comp) {
+      if (!comp || (comp.type !== 'battery' && comp.type !== 'solar' && comp.type !== 'resistor')) return;
       const titleElem = document.getElementById('spec-popup-title');
-      if (titleElem) {
-        titleElem.textContent = comp.type === 'solar' ? '☀️ Panel Surya' : '⚡ Atur Baterai';
-      }
-
-      const volt = comp.voltage !== undefined ? comp.voltage : (comp.type === 'solar' ? 3.0 : 1.5);
       const displayElem = document.getElementById('spec-volt-display');
-      if (displayElem) displayElem.textContent = `${volt.toFixed(1)} V`;
       const sliderElem = document.getElementById('slider-voltage');
-      if (sliderElem) sliderElem.value = volt;
+      const hints = this.batterySpecPopup ? this.batterySpecPopup.querySelector('.spec-slider-hints') : null;
+
+      if (comp.type === 'resistor') {
+        if (titleElem) titleElem.textContent = '⚡ Hambatan Resistor';
+        const res = comp.resistance !== undefined ? comp.resistance : 10;
+        if (displayElem) displayElem.textContent = `${Math.round(res)} Ω`;
+        if (sliderElem) {
+          sliderElem.min = '1';
+          sliderElem.max = '100';
+          sliderElem.step = '1';
+          sliderElem.value = res;
+        }
+        if (hints) hints.innerHTML = '<span>1Ω</span><span>50Ω</span><span>100Ω</span>';
+      } else {
+        if (titleElem) {
+          titleElem.textContent = comp.type === 'solar' ? '☀️ Panel Surya' : '⚡ Atur Baterai';
+        }
+        const volt = comp.voltage !== undefined ? comp.voltage : (comp.type === 'solar' ? 3.0 : 1.5);
+        if (displayElem) displayElem.textContent = `${volt.toFixed(1)} V`;
+        if (sliderElem) {
+          sliderElem.min = '0';
+          sliderElem.max = '24';
+          sliderElem.step = '0.5';
+          sliderElem.value = volt;
+        }
+        if (hints) hints.innerHTML = '<span>0V</span><span>12V</span><span>24V</span>';
+      }
 
       this.batterySpecPopup.classList.remove('hidden');
       this.updateComponentActionsPosition();
+    }
+
+    showBatterySpec(comp) {
+      this.showComponentSpec(comp);
     }
 
     hideBatterySpec() {
@@ -1304,20 +1452,34 @@
       }
     }
 
-    setBatteryVoltage(volt, playSound = true) {
+    setComponentSpecValue(val, playSound = true) {
       if (!this.selectedComponentId) return;
       const comp = this.components.find(c => c.id === this.selectedComponentId);
-      if (!comp || (comp.type !== 'battery' && comp.type !== 'solar')) return;
+      if (!comp) return;
 
-      comp.voltage = Math.max(0, Math.min(24, Math.round(volt * 10) / 10));
+      this.backupCircuitState();
+
       const displayElem = document.getElementById('spec-volt-display');
-      if (displayElem) displayElem.textContent = `${comp.voltage.toFixed(1)} V`;
       const sliderElem = document.getElementById('slider-voltage');
-      if (sliderElem) sliderElem.value = comp.voltage;
+
+      if (comp.type === 'resistor') {
+        comp.resistance = Math.max(1, Math.min(100, Math.round(val)));
+        comp.def.title = `Resistor ${comp.resistance}Ω`;
+        if (displayElem) displayElem.textContent = `${comp.resistance} Ω`;
+        if (sliderElem) sliderElem.value = comp.resistance;
+      } else if (comp.type === 'battery' || comp.type === 'solar') {
+        comp.voltage = Math.max(0, Math.min(24, Math.round(val * 10) / 10));
+        if (displayElem) displayElem.textContent = `${comp.voltage.toFixed(1)} V`;
+        if (sliderElem) sliderElem.value = comp.voltage;
+      }
 
       if (playSound) this.sound.playClick();
       this.updateSimulation();
       this.render();
+    }
+
+    setBatteryVoltage(volt, playSound = true) {
+      this.setComponentSpecValue(volt, playSound);
     }
 
     // Memulai aplikasi dengan kanvas bersih dan kosong sesuai permintaan
@@ -1325,6 +1487,8 @@
       this.components = [];
       this.vertices.clear();
       this.selectedComponentId = null;
+      this.undoStack = [];
+      this.updateUndoUI();
       this.hideScissors();
       if (this.selectionToolbar) this.selectionToolbar.classList.add('hidden');
       this.render();
@@ -1333,6 +1497,7 @@
     }
 
     removeComponent(id) {
+      this.backupCircuitState();
       const idx = this.components.findIndex(c => c.id === id);
       if (idx !== -1) {
         const comp = this.components[idx];
@@ -1358,6 +1523,9 @@
     }
 
     clearAll() {
+      if (this.components.length > 0) {
+        this.backupCircuitState();
+      }
       this.components = [];
       this.vertices.clear();
       this.selectedComponentId = null;
@@ -1365,6 +1533,84 @@
       this.selectionToolbar.classList.add('hidden');
       this.render();
       this.updateSimulation();
+    }
+
+    // ==========================================================================
+    // 5.5 State Backup & Undo Engine
+    // ==========================================================================
+    serializeState() {
+      return JSON.stringify({
+        components: this.components.map(c => ({
+          id: c.id,
+          type: c.type,
+          v1Id: c.v1Id,
+          v2Id: c.v2Id,
+          def: c.def,
+          voltage: c.voltage,
+          resistance: c.resistance,
+          state: c.state
+        })),
+        vertices: Array.from(this.vertices.entries()).map(([k, v]) => [k, { id: v.id, x: v.x, y: v.y }])
+      });
+    }
+
+    restoreState(serialized) {
+      if (!serialized) return;
+      try {
+        const data = JSON.parse(serialized);
+        this.components = data.components || [];
+        this.vertices = new Map();
+        if (Array.isArray(data.vertices)) {
+          data.vertices.forEach(([k, v]) => {
+            this.vertices.set(k, { id: v.id, x: v.x, y: v.y });
+          });
+        }
+        this.selectedComponentId = null;
+        this.hideScissors();
+        this.hideBatterySpec();
+        this.updateSelectionToolbar();
+        this.updateComponentActionsPosition();
+        this.render();
+        this.updateSimulation();
+      } catch (err) {
+        console.error('Failed to restore circuit state:', err);
+      }
+    }
+
+    backupCircuitState() {
+      if (!this.undoStack) this.undoStack = [];
+      const state = this.serializeState();
+      if (this.undoStack.length > 0 && this.undoStack[this.undoStack.length - 1] === state) {
+        return;
+      }
+      this.undoStack.push(state);
+      if (this.undoStack.length > 25) {
+        this.undoStack.shift();
+      }
+      this.updateUndoUI();
+    }
+
+    undo() {
+      if (!this.undoStack || this.undoStack.length === 0) {
+        this.showToast('Tidak ada tindakan untuk dibatalkan', 'normal');
+        return;
+      }
+      const prevState = this.undoStack.pop();
+      this.restoreState(prevState);
+      this.sound.playClick();
+      this.showToast('Tindakan dibatalkan ↩️', 'normal');
+      this.updateUndoUI();
+    }
+
+    updateUndoUI() {
+      const btnUndo = document.getElementById('btn-undo');
+      if (btnUndo) {
+        if (this.undoStack && this.undoStack.length > 0) {
+          btnUndo.classList.remove('hidden');
+        } else {
+          btnUndo.classList.add('hidden');
+        }
+      }
     }
 
     // ==========================================================================
@@ -1425,6 +1671,7 @@
         this.hideScissors();
         return;
       }
+      this.backupCircuitState();
 
       const v = this.vertices.get(vertexId);
       if (!v) {
@@ -1630,6 +1877,7 @@
       if (this.dragState.mode === 'vertex') {
         if (dist > 4) {
           if (!this.dragState.hasMoved) {
+            this.backupCircuitState();
             this.dragState.hasMoved = true;
             this.hideScissors();
           }
@@ -1682,7 +1930,10 @@
         this.updateComponentActionsPosition();
         this.render();
       } else if (this.dragState.mode === 'body') {
-        if (dist > 4) this.dragState.hasMoved = true;
+        if (dist > 4 && !this.dragState.hasMoved) {
+          this.backupCircuitState();
+          this.dragState.hasMoved = true;
+        }
 
         const comp = this.components.find(c => c.id === this.dragState.compId);
         if (!comp) return;
@@ -2124,9 +2375,12 @@
       this.circuitVoltage = totalConductedVoltage;
 
       if (circuitHasShort) {
-        this.sound.playBuzz();
-        this.showToast('⚠️ AWAS KORSLETING! Sumber listrik terhubung langsung tanpa beban!', 'alert');
+        if (!this.wasCircuitShort) {
+          this.sound.playBuzz();
+          this.showToast('⚠️ AWAS KORSLETING! Sumber listrik terhubung langsung tanpa beban!', 'alert');
+        }
       }
+      this.wasCircuitShort = circuitHasShort;
 
       // Apply electrical state based on continuous physical voltage & Ohm's law
       let anyBulbLit = false;
@@ -2146,9 +2400,11 @@
         }
       });
 
-      if (anyBulbLit && !circuitHasShort && this.circuitVoltage > 0) {
+      const isNowLit = anyBulbLit && !circuitHasShort && this.circuitVoltage > 0;
+      if (isNowLit && !this.wasAnyBulbLit) {
         this.sound.playChime();
       }
+      this.wasAnyBulbLit = isNowLit;
 
       this.renderBulbVisuals();
       this.updateMeterReadouts();
@@ -2701,6 +2957,10 @@
           <circle cx="${len - 20}" cy="0" r="6" fill="#475569" />
           <!-- Moving Switch Knife Lever (Clickable) -->
           <g class="switch-clickable" style="cursor: pointer;">
+            <!-- Area sentuh transparan ekstra lebar untuk kemudahan sentuhan jari HP/tablet -->
+            <line x1="15" y1="0" x2="${isClosed ? len - 20 : len * 0.7}" y2="${isClosed ? 0 : -28}" stroke="transparent" stroke-width="32" stroke-linecap="round" />
+            <circle cx="${isClosed ? len - 20 : len * 0.7}" cy="${isClosed ? 0 : -28}" r="22" fill="transparent" />
+            <!-- Visual pisau saklar -->
             <line x1="20" y1="0" x2="${isClosed ? len - 20 : len * 0.7}" y2="${isClosed ? 0 : -28}" stroke="${isClosed ? '#22c55e' : '#ef4444'}" stroke-width="7" stroke-linecap="round" />
             <circle cx="${isClosed ? len - 20 : len * 0.7}" cy="${isClosed ? 0 : -28}" r="8" fill="#ffffff" stroke="#334155" stroke-width="2" />
           </g>
@@ -3243,6 +3503,10 @@
     }
 
     showToast(message, type = 'normal') {
+      if (this.toastTimer) {
+        clearTimeout(this.toastTimer);
+        this.toastTimer = null;
+      }
       this.statusMsg.textContent = message;
       this.statusToast.className = 'status-toast';
       if (type === 'alert') {
@@ -3254,6 +3518,11 @@
       } else {
         this.statusIcon.textContent = '💡';
       }
+      this.toastTimer = setTimeout(() => {
+        if (this.statusToast) {
+          this.statusToast.classList.add('fade-out');
+        }
+      }, 3500);
     }
   }
 

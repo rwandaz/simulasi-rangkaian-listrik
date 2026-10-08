@@ -522,7 +522,7 @@
           </button>
         </div>
 
-        <!-- Unified Workbench Bottom Bar (Zoom Controls + Bersihkan Papan) -->
+        <!-- Unified Workbench Bottom Bar (Zoom Controls + Batal/Undo + Bersihkan Papan) -->
         <div class="workbench-bottom-bar" id="workbench-bottom-bar">
           <div class="zoom-controls-pill" title="Perbesar / Perkecil Kanvas">
             <button id="btn-zoom-out" class="bar-btn zoom-step-btn" title="Perkecil Layar (−)" aria-label="Perkecil">
@@ -536,10 +536,16 @@
             </button>
           </div>
 
-          <button id="btn-clear" class="bar-btn btn-clear-board" title="Bersihkan Semua Komponen dari Papan">
-            <span class="clear-icon">🗑️</span>
-            <span class="clear-text">Bersihkan Papan</span>
-          </button>
+          <div class="bottom-actions-group">
+            <button id="btn-undo" class="bar-btn btn-undo-action hidden" title="Batalkan Tindakan Terakhir (Ctrl+Z)" aria-label="Batal">
+              <span class="undo-icon">↩️</span>
+              <span class="undo-text">Batal</span>
+            </button>
+            <button id="btn-clear" class="bar-btn btn-clear-board" title="Bersihkan Semua Komponen dari Papan">
+              <span class="clear-icon">🗑️</span>
+              <span class="clear-text">Bersihkan Papan</span>
+            </button>
+          </div>
         </div>
       </section>
     </main>

@@ -351,6 +351,12 @@ html, body {
   background: rgba(16, 185, 129, 0.95);
 }
 
+.status-toast.fade-out {
+  opacity: 0;
+  transform: translate(-50%, -10px);
+  pointer-events: none;
+}
+
 /* ==========================================================================
    3. Main Workspace & Canvas
    ========================================================================== */
@@ -1102,6 +1108,41 @@ html, body {
   transform: scale(0.96);
 }
 
+.bottom-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-undo-action {
+  height: 44px;
+  padding: 0 16px;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0284c7;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-undo-action:hover {
+  background: #f0f9ff;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.18);
+}
+
+.btn-undo-action:active {
+  transform: scale(0.96);
+}
+
+.btn-undo-action.hidden {
+  display: none !important;
+}
+
 .workbench.panning {
   cursor: grabbing !important;
 }
@@ -1314,6 +1355,7 @@ html, body {
     padding: 6px 10px;
     gap: 8px;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
     align-items: center;
     height: 100%;
   }
@@ -1329,6 +1371,7 @@ html, body {
     align-items: center;
     justify-content: center;
     gap: 2px;
+    touch-action: pan-x manipulation;
   }
 
   .item-preview {
@@ -1389,6 +1432,36 @@ html, body {
     font-size: 0.72rem;
     min-width: 34px;
     padding: 0 4px;
+  }
+
+  .bottom-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-undo-action {
+    height: 36px;
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+    border: 1.5px solid #cbd5e1;
+  }
+
+  .undo-text {
+    display: none;
+  }
+
+  .undo-icon {
+    font-size: 1.1rem;
+    margin: 0;
   }
 
   .btn-clear-board {
