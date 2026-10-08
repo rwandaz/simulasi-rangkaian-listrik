@@ -1,6 +1,6 @@
 # 📖 Panduan Memasang Tema XML di Blogger (Blogspot)
 
-Berikut adalah panduan lengkap langkah demi langkah untuk menerapkan tema **Lab Rangkaian Listrik Cilik** ke blog Blogger Anda:
+Berikut adalah panduan lengkap langkah demi langkah untuk menerapkan tema **Simulasi Rangkaian Listrik** ke blog Blogger Anda:
 
 ---
 
@@ -73,7 +73,7 @@ Jika Anda ingin mempertahankan tema blog Anda saat ini dan **hanya ingin menyema
   </iframe>
 </div>
 <p style="text-align: center; font-size: 13px; color: #64748b;">
-  ⚡ <em>Laboratorium Rangkaian Listrik Cilik interaktif oleh Pak Rwanda. Klik tombol layar penuh di kanan atas untuk pengalaman terbaik.</em>
+  ⚡ <em>Simulasi Rangkaian Listrik interaktif oleh Pak Rwanda. Klik tombol layar penuh di kanan atas untuk pengalaman terbaik.</em>
 </p>
 ```
 4. Publikasikan artikel Anda!

@@ -1,4 +1,4 @@
-# ⚡ Simulasi Rangkaian Listrik Cilik - by Pak Rwanda
+# ⚡ Simulasi Rangkaian Listrik - oleh Pak Rwanda
 
 Aplikasi web interaktif simulasi rangkaian listrik untuk siswa Sekolah Dasar (SD). Dirancang khusus agar **100% kompatibel dengan layar sentuh (HP, Tablet, Chromebook)**, interaktif, menyenangkan, dan siap diunggah ke **GitHub Pages** serta disematkan langsung di **Blogger (Blogspot)**.
 
@@ -60,7 +60,7 @@ Aplikasi web interaktif simulasi rangkaian listrik untuk siswa Sekolah Dasar (SD
 
 ```
 simulasi-rangkaian-listrik/
-├── index.html                            <-- Pengalihan Otomatis (Redirect) ke Rangkaian Listrik/index.html
+├── index.html                            <-- Portal Web Simulasi Rangkaian Listrik
 ├── README.md                             <-- Dokumentasi Proyek
 ├── Rangkaian Listrik/                    <-- Folder Utama Aplikasi Simulasi Listrik
 │   ├── index.html                        <-- Berkas HTML Utama Simulasi
@@ -107,7 +107,7 @@ Jika ingin menampilkan simulasi di dalam satu postingan artikel Blogger saja:
 3. Salin dan tempel kode berikut:
 
 ```html
-<!-- Simulasi Rangkaian Listrik Cilik - by Pak Rwanda -->
+<!-- Simulasi Rangkaian Listrik - oleh Pak Rwanda -->
 <div style="position: relative; width: 100%; height: 680px; max-height: 85vh; border-radius: 20px; overflow: hidden; box-shadow: 0 12px 32px rgba(2, 132, 199, 0.2); margin: 20px 0; background: #0f172a;">
   <iframe 
     src="https://rwandaz.github.io/simulasi-rangkaian-listrik/" 

@@ -1,5 +1,5 @@
 /**
- * Simulasi Rangkaian Listrik Cilik - by Pak Rwanda
+ * Simulasi Rangkaian Listrik - oleh Pak Rwanda
  * Fitur & Mekanisme Fisik:
  * - Kabel sebagai komponen fisik mandiri (stretchable & rotatable)
  * - Sistem Magnet (Snap & Merge) ujung lingkaran merah -> lingkaran hitam

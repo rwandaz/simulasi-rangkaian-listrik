@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" name="viewport"/>
-  <title>Pratinjau Tema Blogger: Lab Rangkaian Listrik Cilik - by Pak Rwanda</title>
+  <title>Pratinjau Tema Blogger: Simulasi Rangkaian Listrik - oleh Pak Rwanda</title>
   
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -58,18 +58,6 @@
     .sim-card-shadow {
       box-shadow: 0 20px 45px -10px rgba(2, 132, 199, 0.18), 0 8px 20px -6px rgba(15, 23, 42, 0.08);
     }
-    .sim-iframe-container {
-      position: relative;
-      width: 100%;
-      height: 720px;
-      max-height: 85vh;
-      border-radius: 20px;
-      overflow: hidden;
-      background: #0f172a;
-    }
-    @media (max-width: 768px) {
-      .sim-iframe-container { height: 600px; max-height: 80vh; }
-    }
     .feature-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 16px 32px -8px rgba(2, 132, 199, 0.15);
@@ -83,7 +71,7 @@
 </head>
 <body class="antialiased text-slate-800 bg-slate-50">
 
-  <!-- Top Glass Navigation (Tanpa Tombol Ganda) -->
+  <!-- Top Glass Navigation -->
   <header class="sticky top-0 z-50 glass-nav shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-20">
@@ -93,28 +81,28 @@
           </div>
           <div>
             <div class="font-heading text-xl sm:text-2xl font-bold text-slate-900 leading-tight">
-              Lab Rangkaian Listrik
+              Simulasi Rangkaian Listrik
             </div>
             <div class="text-xs font-semibold text-sky-600 flex items-center gap-1.5">
               <span>oleh Pak Rwanda</span>
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span class="text-emerald-600">Edisi Siswa SD</span>
+              <span class="text-emerald-600">Media Belajar IPA SD</span>
             </div>
           </div>
         </a>
 
-        <!-- Navigation Links (Hanya Navigasi Konten) -->
+        <!-- Navigation Links -->
         <nav class="hidden md:flex items-center gap-7">
-          <a class="text-sm font-bold text-slate-600 hover:text-sky-600 transition" href="#fitur">🌟 Fitur Alat</a>
-          <a class="text-sm font-bold text-slate-600 hover:text-sky-600 transition" href="#panduan">📖 Petunjuk Belajar</a>
+          <a class="text-sm font-bold text-slate-600 hover:text-sky-600 transition" href="#fitur">🌟 Fitur Simulasi</a>
+          <a class="text-sm font-bold text-slate-600 hover:text-sky-600 transition" href="#panduan">📖 Petunjuk Simulasi</a>
         </nav>
 
-        <!-- Satu-satunya Tombol Aksi di Header -->
+        <!-- Tombol Aksi di Header (Buka Tab Baru Full Aplikasi) -->
         <div class="flex items-center gap-3">
-          <button id="btn-header-start" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white font-bold text-sm shadow-md shadow-sky-500/25 hover:from-sky-600 hover:to-sky-700 hover:shadow-lg transition-all" onclick="startSimulation()">
+          <a id="btn-header-start" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white font-bold text-sm shadow-md shadow-sky-500/25 hover:from-sky-600 hover:to-sky-700 hover:shadow-lg transition-all text-decoration-none" href="../Rangkaian%20Listrik/index.html" target="_blank" rel="noopener noreferrer">
             <span>Mulai Simulasi</span>
-            <i class="fa-solid fa-play text-xs"></i>
-          </button>
+            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+          </a>
         </div>
       </div>
     </div>
@@ -124,17 +112,17 @@
   <section class="relative overflow-hidden pt-12 pb-16 bg-gradient-to-b from-sky-50/70 via-slate-50 to-slate-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
       <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100/80 border border-sky-200 text-sky-800 text-xs sm:text-sm font-bold mb-6 shadow-sm">
-        <span>🔬 Media Pembelajaran IPA / Fisika Interaktif</span>
+        <span>🔬 Simulasi Rangkaian Listrik Interaktif</span>
         <span class="text-sky-400">•</span>
-        <span class="text-sky-600">100% Layar Sentuh & Komputer</span>
+        <span class="text-sky-600">100% Layar Sentuh Ponsel &amp; Komputer</span>
       </div>
 
       <h1 class="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight max-w-4xl mx-auto mb-6">
-        Eksperimen Rangkaian Listrik Cilik Menyenangkan & Aman
+        Simulasi Rangkaian Listrik Interaktif
       </h1>
 
       <p class="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-        Rakit kabel mandiri, pasang baterai, saklar, bohlam, dinamo berputar, hingga panel surya fotovoltaik. Pelajari aliran elektron dan arus konvensional langsung di browser Anda!
+        Rakit kabel mandiri, pasang baterai, saklar, bohlam, dinamo berputar, hingga panel surya. Pelajari Hukum Ohm, rangkaian seri, dan paralel langsung di browser Anda secara nyata, aman, dan mudah!
       </p>
 
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto mb-12 text-left">
@@ -145,8 +133,8 @@
         </div>
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
           <div class="text-2xl mb-1">💡</div>
-          <div class="font-heading font-bold text-slate-900 text-sm">Seri & Paralel</div>
-          <div class="text-xs text-slate-500">Fisika terang & redup</div>
+          <div class="font-heading font-bold text-slate-900 text-sm">Seri &amp; Paralel</div>
+          <div class="text-xs text-slate-500">Fisika terang &amp; redup</div>
         </div>
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
           <div class="text-2xl mb-1">⚙️</div>
@@ -162,15 +150,15 @@
     </div>
   </section>
 
-  <!-- Simulasi Interactive Embed Section -->
+  <!-- Simulasi Showcase Section -->
   <section class="py-8 -mt-6" id="simulasi">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="bg-white p-3 sm:p-5 rounded-3xl border border-sky-200/80 sim-card-shadow">
 
-        <!-- 1. TAMPILAN AWAL SEBELUM SIMULASI DIMULAI (Cover Card) -->
+        <!-- TAMPILAN SHOWCASE LAUNCHER (Selalu Membuka Tab Baru Full Layar) -->
         <div id="sim-cover-card" class="launcher-cover rounded-2xl p-8 sm:p-14 text-center text-white my-2">
           <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-300 text-xs font-bold mb-6">
-            <span>⚡ Laboratorium Virtual Siap Digunakan</span>
+            <span>⚡ Simulasi Rangkaian Listrik Siap Digunakan</span>
           </div>
 
           <!-- Ikon & Ilustrasi Animatif -->
@@ -183,61 +171,50 @@
           </div>
 
           <h2 class="font-heading text-2xl sm:text-4xl font-extrabold text-white mb-4">
-            Laboratorium Rangkaian Listrik Virtual
+            Simulasi Rangkaian Listrik Interaktif
           </h2>
-          <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto mb-8 leading-relaxed font-normal">
-            Papan kerja eksperimen listrik siap digunakan. Tekan tombol di bawah untuk membuka simulasi langsung di halaman ini tanpa perlu mengunduh aplikasi.
+          <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed font-normal">
+            Papan kerja eksperimen sirkuit listrik interaktif dengan kabel fisik fleksibel, baterai dinamis, bohlam pijar, dinamo berputar, dan alat ukur digital. Klik tombol di bawah untuk membuka simulasi penuh di tab baru.
           </p>
 
-          <!-- SATU-SATUNYA TOMBOL MULAI SIMULASI -->
+          <!-- SATU-SATUNYA TOMBOL MULAI SIMULASI (BUKA TAB BARU MANDIRI) -->
           <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button id="btn-start-main" class="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-sky-500 via-sky-600 to-emerald-500 text-white font-heading text-lg font-bold shadow-xl shadow-sky-500/30 hover:scale-105 hover:shadow-sky-500/50 active:scale-95 transition-all" onclick="startSimulation()">
+            <a id="btn-start-main" class="inline-flex items-center justify-center gap-3 px-8 py-4 sm:px-10 sm:py-5 rounded-2xl bg-gradient-to-r from-sky-500 via-sky-600 to-emerald-500 text-white font-heading text-lg sm:text-xl font-bold shadow-xl shadow-sky-500/30 hover:scale-105 hover:shadow-sky-500/50 active:scale-95 transition-all text-decoration-none" href="../Rangkaian%20Listrik/index.html" target="_blank" rel="noopener noreferrer">
               <i class="fa-solid fa-play text-base"></i>
               <span>Mulai Simulasi</span>
-            </button>
+              <i class="fa-solid fa-arrow-up-right-from-square text-sm"></i>
+            </a>
           </div>
 
-          <div class="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400 font-semibold">
-            <span class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-400"></i> 100% Gratis</span>
-            <span class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-400"></i> Ramah Layar Sentuh</span>
-            <span class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-400"></i> Bebas Risiko Bahaya</span>
-          </div>
-        </div>
-
-        <!-- 2. WADAH SIMULASI AKTIF (Muncul HANYA SETELAH Tombol Mulai Ditekan) -->
-        <div id="sim-active-wrapper" class="hidden">
-          <div class="flex flex-wrap items-center justify-between gap-4 px-3 py-3 border-b border-slate-100 mb-3">
-            <div class="flex items-center gap-3">
-              <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span class="font-heading font-bold text-slate-800 text-base sm:text-lg">Laboratorium Virtual Sedang Berjalan</span>
-              <span class="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-xs font-bold">Aktif</span>
+          <!-- Kompatibilitas Perangkat: Desktop, Ponsel, Tablet -->
+          <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto text-left">
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 flex items-center gap-3">
+              <span class="text-2xl">💻</span>
+              <div>
+                <div class="font-bold text-white text-xs">Desktop &amp; Laptop</div>
+                <div class="text-[11px] text-slate-400">Layar penuh bebas &amp; luas</div>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <a class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold transition" href="../Rangkaian%20Listrik/index.html" target="_blank" title="Buka di Tab Baru Mandiri">
-                <i class="fa-solid fa-up-right-from-square"></i>
-                <span>Buka di Tab Baru</span>
-              </a>
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 flex items-center gap-3">
+              <span class="text-2xl">📱</span>
+              <div>
+                <div class="font-bold text-white text-xs">Ponsel Pintar</div>
+                <div class="text-[11px] text-slate-400">100% Layar sentuh responsif</div>
+              </div>
             </div>
-          </div>
-
-          <!-- Embedded Simulation Iframe (Lazy Loaded On-Demand) -->
-          <div class="sim-iframe-container" id="sim-container">
-            <iframe 
-              allow="fullscreen; accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" 
-              allowfullscreen="true"
-              id="sim-iframe"
-              src="" 
-              style="width: 100%; height: 100%; border: none; display: block;">
-            </iframe>
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 flex items-center gap-3">
+              <span class="text-2xl">📟</span>
+              <div>
+                <div class="font-bold text-white text-xs">Tablet &amp; iPad</div>
+                <div class="text-[11px] text-slate-400">Orientasi tegak &amp; mendatar</div>
+              </div>
+            </div>
           </div>
 
-          <div class="mt-4 px-3 py-2 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
-            <div class="flex items-center gap-2">
-              <span>💡 <strong>Tips Belajar:</strong> Tarik kabel dari kotak alat di kiri, dekatkan bulatan merah hingga menempel (snap) dengan baterai & lampu!</span>
-            </div>
-            <div class="font-medium text-slate-400">
-              Karya: Pak Rwanda • Edukasi Sains Dasar
-            </div>
+          <div class="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-300 font-semibold">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-400"></i> Buka Full Aplikasi di Tab Baru</span>
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-400"></i> 100% Gratis &amp; Tanpa Unduh</span>
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-400"></i> Aman untuk Siswa SD</span>
           </div>
         </div>
 
@@ -250,7 +227,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-3xl mx-auto mb-16">
         <h2 class="font-heading text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
-          Fitur Lengkap untuk Pemahaman Sains Optimal
+          Fitur Simulasi Rangkaian Listrik
         </h2>
         <p class="text-slate-600 text-base">
           Dirancang sesuai kurikulum IPA sekolah dasar dengan mekanisme fisika sirkuit yang akurat, aman, dan mudah dimainkan siswa.
@@ -346,10 +323,10 @@
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="bg-gradient-to-r from-sky-600 to-sky-700 rounded-3xl p-8 sm:p-12 text-white shadow-xl shadow-sky-600/20">
         <div class="flex items-center gap-3 mb-4">
-          <span class="px-3 py-1 rounded-full bg-white/20 text-xs font-bold tracking-wide uppercase">Pedoman Praktikum</span>
+          <span class="px-3 py-1 rounded-full bg-white/20 text-xs font-bold tracking-wide uppercase">Pedoman Simulasi</span>
         </div>
         <h2 class="font-heading text-3xl sm:text-4xl font-extrabold mb-6">
-          Langkah Mudah Menggunakan Simulasi di Kelas
+          Petunjuk Simulasi Rangkaian Listrik
         </h2>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sky-100 text-sm leading-relaxed">
@@ -396,39 +373,15 @@
         ⚡
       </div>
       <h3 class="font-heading text-xl font-bold text-white mb-2">
-        Lab Rangkaian Listrik Cilik
+        Simulasi Rangkaian Listrik
       </h3>
       <p class="text-sm text-slate-400 max-w-md mx-auto mb-6">
-        Media simulasi pembelajaran interaktif berbasis web untuk siswa Sekolah Dasar (SD). Didedikasikan untuk kemajuan literasi sains Indonesia.
+        Media simulasi pembelajaran interaktif berbasis web untuk siswa Sekolah Dasar (SD) oleh Pak Rwanda. Didedikasikan untuk kemajuan literasi sains Indonesia.
       </p>
       <div class="text-xs text-slate-500 border-t border-slate-800 pt-6">
         © 2026 <strong>Pak Rwanda</strong> • Seluruh hak cipta dilindungi. Siap disematkan pada Blogger & GitHub Pages.
       </div>
     </div>
   </footer>
-
-  <!-- Script Logika Peluncur Simulasi On-Demand -->
-  <script>
-    let isSimStarted = false;
-
-    function startSimulation() {
-      const coverCard = document.getElementById('sim-cover-card');
-      const activeWrapper = document.getElementById('sim-active-wrapper');
-      const iframe = document.getElementById('sim-iframe');
-
-      if (!isSimStarted) {
-        iframe.src = '../Rangkaian%20Listrik/index.html';
-        isSimStarted = true;
-      }
-
-      if (coverCard) coverCard.classList.add('hidden');
-      if (activeWrapper) activeWrapper.classList.remove('hidden');
-
-      const simSection = document.getElementById('simulasi');
-      if (simSection) {
-        simSection.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  </script>
 </body>
 </html>
