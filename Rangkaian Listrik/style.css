@@ -1,0 +1,1308 @@
+/* ==========================================================================
+   Simulasi Rangkaian Listrik Cilik - by Pak Rwanda
+   Sistem Sambungan Segmen, Kabel Fleksibel, Snap Magnetik & Titik Temu
+   ========================================================================== */
+
+:root {
+  --primary-color: #0284c7;
+  --primary-dark: #0369a1;
+  --accent-color: #f59e0b;
+  --workbench-bg: #e2f1fc; /* Soft blue canvas background */
+  --workbench-grid: #cbe3f7;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-radius-lg: 20px;
+  --border-radius-md: 14px;
+  --border-radius-sm: 8px;
+  --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+  --font-heading: 'Fredoka', 'Nunito', sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-body);
+  color: var(--text-main);
+  background: #f8fafc;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   1. Header Bar
+   ========================================================================== */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #ffffff;
+  border-bottom: 2px solid #e2e8f0;
+  z-index: 50;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 24px;
+  background: #fef08a;
+  border: 2px solid #facc15;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(234, 179, 8, 0.3);
+}
+
+.app-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-title {
+  font-family: var(--font-heading);
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: #0369a1;
+  line-height: 1.1;
+}
+
+.app-subtitle {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #0284c7;
+}
+
+/* Mode Switch Tabs */
+.mode-tabs {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 999px;
+  gap: 4px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+  background: #ffffff;
+  color: var(--primary-color);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Header Action Buttons */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Flow Mode Switcher (Elektron vs Arus) */
+.flow-switcher {
+  display: flex;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 999px;
+  gap: 3px;
+  border: 1px solid #cbd5e1;
+}
+
+.flow-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.flow-btn:hover {
+  color: var(--text-main);
+}
+
+.flow-btn.active {
+  background: #ffffff;
+  color: #0284c7;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.flow-btn#btn-flow-current.active {
+  color: #ea580c;
+}
+
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: #ffffff;
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #1e293b;
+}
+
+.btn-icon:hover {
+  background: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.btn-icon:active {
+  transform: scale(0.92);
+}
+
+/* ==========================================================================
+   2. Mission Banner & Status Toast
+   ========================================================================== */
+.mission-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #fef3c7, #fde68a);
+  border-bottom: 2px solid #f59e0b;
+  padding: 8px 16px;
+  font-size: 0.92rem;
+  z-index: 40;
+  gap: 12px;
+}
+
+.mission-bar.hidden {
+  display: none !important;
+}
+
+.mission-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.mission-badge {
+  background: #d97706;
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.mission-text {
+  font-weight: 700;
+  color: #78350f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mission-nav {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  border: none;
+  background: #ffffff;
+  color: #78350f;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+}
+
+.btn-sm.btn-accent {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+/* Status Toast */
+.status-toast {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.88);
+  color: #ffffff;
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 45;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.status-toast.alert {
+  background: rgba(220, 38, 38, 0.95);
+}
+
+.status-toast.success {
+  background: rgba(16, 185, 129, 0.95);
+}
+
+/* ==========================================================================
+   3. Main Workspace & Canvas
+   ========================================================================== */
+.workspace-area {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.workbench {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  background-color: var(--workbench-bg);
+  background-image: 
+    linear-gradient(to right, var(--workbench-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--workbench-grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+  overflow: hidden;
+  touch-action: none; /* Crucial: Disables default page scrolling on touch */
+}
+
+/* SVG Master Container */
+.circuit-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  touch-action: none;
+}
+
+/* ==========================================================================
+   4. Component Tray (Kotak Alat)
+   ========================================================================== */
+.component-tray {
+  width: 180px;
+  background: #ffffff;
+  border-right: 2px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
+}
+
+.tray-header {
+  padding: 10px 14px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.tray-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.tray-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: block;
+}
+
+.tray-items-scroller {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tray-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--border-radius-md);
+  padding: 8px 6px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  touch-action: manipulation;
+}
+
+.tray-item:hover {
+  background: #f1f5f9;
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.tray-item:active {
+  transform: scale(0.95);
+}
+
+.item-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  font-size: 1.6rem;
+}
+
+.item-name {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
+  margin-top: 4px;
+  text-align: center;
+}
+
+/* Specific Preview Visuals */
+.item-wire-preview {
+  width: 60px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wire-rod {
+  width: 50px;
+  height: 8px;
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+  border: 2px dashed #dc2626;
+  border-radius: 4px;
+}
+
+.item-battery {
+  width: 64px;
+  height: 28px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.item-battery::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  width: 5px;
+  height: 12px;
+  background: #f59e0b;
+  border-radius: 0 2px 2px 0;
+}
+
+.battery-pole-plus, .battery-pole-minus {
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+
+.battery-pole-plus { color: #f59e0b; }
+.battery-label {
+  color: #fef08a;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+/* ==========================================================================
+   5. SVG Components, Segments, and Junction Circles
+   ========================================================================== */
+
+/* 5.1 Component Group in SVG */
+.circuit-component {
+  cursor: grab;
+  transition: filter 0.2s ease;
+}
+
+.circuit-component:active {
+  cursor: grabbing;
+}
+
+/* Selected Component State (Tersorot jelas & bercahaya) */
+.circuit-component.selected {
+  filter: drop-shadow(0 0 6px #0284c7) drop-shadow(0 0 12px rgba(56, 189, 248, 0.65));
+}
+
+/* Selection Highlight Box & Elements */
+.selection-highlight {
+  pointer-events: none;
+}
+
+.selection-halo {
+  fill: rgba(2, 132, 199, 0.12);
+  stroke: #0284c7;
+  stroke-width: 2.5px;
+  stroke-dasharray: 6 4;
+  animation: haloPulse 1.2s infinite alternate ease-in-out;
+}
+
+.selection-corner {
+  fill: #0284c7;
+  stroke: #ffffff;
+  stroke-width: 1.5px;
+}
+
+.selection-glow {
+  stroke: #0284c7;
+  stroke-width: 28px;
+  stroke-linecap: round;
+  opacity: 0.35;
+  filter: drop-shadow(0 0 8px rgba(2, 132, 199, 0.8));
+}
+
+.selection-dash {
+  stroke: #38bdf8;
+  stroke-width: 3px;
+  stroke-linecap: round;
+  stroke-dasharray: 6 4;
+  animation: dashMarch 1s linear infinite;
+}
+
+@keyframes haloPulse {
+  from { stroke-opacity: 0.7; fill-opacity: 0.08; }
+  to { stroke-opacity: 1; fill-opacity: 0.18; }
+}
+
+@keyframes dashMarch {
+  to { stroke-dashoffset: -20; }
+}
+
+/* Wire Component */
+.circuit-wire-line {
+  stroke: #ea580c;
+  stroke-width: 14px;
+  stroke-linecap: round;
+  cursor: grab;
+}
+
+.circuit-wire-inner {
+  stroke: #fb923c;
+  stroke-width: 8px;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.circuit-wire-shorted {
+  stroke: #ef4444 !important;
+  animation: wireFire 0.25s infinite alternate;
+}
+
+@keyframes wireFire {
+  from { stroke: #ef4444; }
+  to { stroke: #f97316; }
+}
+
+/* 5.2 Vertex Junction Points (Lingkaran Sambungan) */
+.circuit-vertex {
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* Open/Unconnected Endpoint: Red Dashed Ring */
+.circuit-vertex-circle.open {
+  fill: rgba(254, 226, 226, 0.4);
+  stroke: #dc2626;
+  stroke-width: 3px;
+  stroke-dasharray: 5 3;
+  transition: r 0.15s ease, stroke 0.15s ease;
+}
+
+.circuit-vertex-circle.open:hover {
+  stroke: #b91c1c;
+  stroke-width: 4px;
+}
+
+/* Merged / Connected Junction: Solid Black Circle */
+.circuit-vertex-circle.merged {
+  fill: #0f172a;
+  stroke: #334155;
+  stroke-width: 2px;
+  stroke-dasharray: none;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  transition: r 0.2s ease, fill 0.2s ease, stroke 0.2s ease;
+}
+
+.circuit-vertex-circle.merged:hover {
+  fill: #1e293b;
+  stroke: #38bdf8;
+  stroke-width: 3px;
+}
+
+/* Active Clicked Junction (Selected for disconnection) */
+.circuit-vertex-circle.merged.active {
+  fill: #ef4444 !important;
+  stroke: #ffffff !important;
+  stroke-width: 3.5px !important;
+  filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.9)) !important;
+  animation: pulseActiveVertex 0.6s infinite alternate;
+}
+
+@keyframes pulseActiveVertex {
+  from { transform: scale(1); }
+  to { transform: scale(1.25); }
+}
+
+/* Invisible large hitbox on each vertex for touch accessibility */
+.circuit-vertex-hitbox {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 24px;
+  cursor: grab;
+}
+
+/* Magnetic Snap Halo Target */
+.snap-halo {
+  fill: rgba(34, 197, 94, 0.25);
+  stroke: #22c55e;
+  stroke-width: 3px;
+  stroke-dasharray: 4 2;
+  pointer-events: none;
+  animation: pulseSnap 0.6s infinite alternate;
+}
+
+.snap-halo.hidden {
+  display: none !important;
+}
+
+@keyframes pulseSnap {
+  from { transform: scale(0.95); opacity: 0.7; }
+  to { transform: scale(1.25); opacity: 1; }
+}
+
+/* 5.3 Particle Animation (Elektron Biru & Arus Oranye) */
+.electron-particle,
+.current-arrow-particle {
+  pointer-events: none;
+}
+
+.electron-circle {
+  fill: #3b82f6;
+  stroke: #1d4ed8;
+  stroke-width: 1.5px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+}
+
+.electron-text {
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  fill: #ffffff;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* Conventional Current Arrow Particles */
+.current-arrow-shape {
+  fill: #ea580c;
+  stroke: #c2410c;
+  stroke-width: 1px;
+  filter: drop-shadow(0 0 4px rgba(234, 88, 12, 0.7));
+}
+
+/* ==========================================================================
+   6. Floating Canvas Action Buttons (Icon Only with Clearance)
+   ========================================================================== */
+.junction-scissors {
+  position: absolute;
+  z-index: 60;
+  transform: translate(-50%, -100%);
+  margin-top: -22px; /* Jarak aman 22px di atas titik sambungan */
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.component-actions {
+  position: absolute;
+  z-index: 60;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: auto;
+}
+
+.hidden,
+.junction-scissors.hidden,
+.component-actions.hidden,
+.btn-bubble-icon.hidden {
+  display: none !important;
+}
+
+/* Shared Icon-Only Floating Bubble Button */
+.btn-bubble-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2.5px solid #0284c7;
+  font-size: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  touch-action: manipulation;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-bubble-icon:hover {
+  transform: scale(1.15);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+}
+
+.btn-bubble-icon:active {
+  transform: scale(0.92);
+}
+
+.btn-bubble-icon.btn-cut {
+  border-color: #ef4444;
+  color: #dc2626;
+}
+.btn-bubble-icon.btn-cut:hover {
+  background: #fef2f2;
+}
+
+.btn-bubble-icon.btn-rotate {
+  border-color: #0284c7;
+  color: #0284c7;
+}
+.btn-bubble-icon.btn-rotate:hover {
+  background: #f0f9ff;
+}
+
+.btn-bubble-icon.btn-spec {
+  border-color: #f59e0b;
+  color: #d97706;
+}
+.btn-bubble-icon.btn-spec:hover {
+  background: #fffbeb;
+}
+
+.btn-bubble-icon.btn-delete {
+  border-color: #ef4444;
+  color: #dc2626;
+}
+.btn-bubble-icon.btn-delete:hover {
+  background: #fef2f2;
+}
+
+/* Floating Battery Spec Popup */
+.battery-spec-popup {
+  position: absolute;
+  z-index: 70;
+  background: #ffffff;
+  border: 2.5px solid #f59e0b;
+  border-radius: var(--border-radius-md);
+  padding: 12px 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+  min-width: 200px;
+  transform: translate(-50%, -100%);
+  margin-top: -36px;
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.battery-spec-popup.hidden {
+  display: none !important;
+}
+
+.spec-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.spec-popup-title {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #b45309;
+}
+
+.spec-popup-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #64748b;
+  padding: 2px;
+}
+
+.spec-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.spec-step-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #f59e0b;
+  background: #fffbeb;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #b45309;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.spec-step-btn:hover {
+  background: #fef3c7;
+  transform: scale(1.1);
+}
+
+.spec-volt-val {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0f172a;
+  min-width: 65px;
+  text-align: center;
+}
+
+.spec-slider {
+  width: 100%;
+  accent-color: #f59e0b;
+  cursor: pointer;
+}
+
+.spec-slider-hints {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Drag Ghost for Sidebar Drag & Drop */
+.drag-ghost {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.95);
+  border: 2.5px dashed #0284c7;
+  border-radius: var(--border-radius-md);
+  padding: 8px 16px;
+  box-shadow: 0 10px 25px rgba(2, 132, 199, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0284c7;
+  cursor: grabbing;
+}
+
+.drag-ghost.hidden {
+  display: none !important;
+}
+
+/* Floating Component Selection Toolbar */
+.selection-toolbar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideUp 0.2s ease;
+}
+
+.selection-toolbar.hidden {
+  display: none !important;
+}
+
+@keyframes slideUp {
+  from { transform: translate(-50%, 20px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.selected-comp-badge {
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: #e0f2fe;
+  padding: 4px 12px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn-sel-action {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-sel-danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-sel-danger:hover {
+  background: #fecaca;
+}
+
+.btn-sel-primary {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #7dd3fc;
+}
+
+.btn-sel-primary:hover {
+  background: #bae6fd;
+}
+
+.btn-sel-secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-sel-secondary:hover {
+  background: #e2e8f0;
+/* Canvas Zoom Controls (+, Reset, -) */
+.canvas-zoom-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--border-radius-full);
+  padding: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  z-index: 40;
+  gap: 2px;
+}
+
+.zoom-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.zoom-btn:hover {
+  background: #f1f5f9;
+  transform: scale(1.1);
+}
+
+.zoom-btn:active {
+  transform: scale(0.92);
+}
+
+.zoom-btn-reset {
+  width: auto;
+  border-radius: 14px;
+  padding: 0 10px;
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #0284c7;
+}
+
+.zoom-btn-reset:hover {
+  background: #f0f9ff;
+}
+
+.workbench.panning {
+  cursor: grabbing !important;
+}
+.workbench.panning * {
+  cursor: grabbing !important;
+}
+
+/* Workbench Bottom Action Controls */
+.workbench-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 40;
+}
+
+.wb-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  padding: 10px 16px;
+  border-radius: var(--border-radius-md);
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s ease;
+}
+
+.wb-btn:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+}
+
+.wb-btn-danger:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+/* Smoke / Fire overlay on short circuit */
+.fx-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 48;
+  pointer-events: none;
+}
+
+.smoke-cloud {
+  position: absolute;
+  font-size: 3.5rem;
+  animation: firePuff 1.2s forwards ease-out;
+  pointer-events: none;
+}
+
+@keyframes firePuff {
+  0% { transform: scale(0.5) translateY(0); opacity: 1; }
+  100% { transform: scale(1.8) translateY(-50px); opacity: 0; }
+}
+
+/* ==========================================================================
+   7. Modals (Help & Celebration)
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modal-backdrop.hidden {
+  display: none !important;
+}
+
+.modal-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 580px;
+  max-height: 85vh;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.modal-header h2 {
+  font-family: var(--font-heading);
+  font-size: 1.22rem;
+  color: #0369a1;
+}
+
+.modal-close {
+  background: #f1f5f9;
+  border: none;
+  font-size: 1rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.help-section h3 {
+  font-family: var(--font-heading);
+  color: #1e293b;
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+}
+
+.help-section ul {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.code-box {
+  background: #1e293b;
+  color: #38bdf8;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 0.78rem;
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 2px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-modal-action {
+  background: var(--primary-color);
+  color: #ffffff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: var(--border-radius-md);
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-celebrate {
+  text-align: center;
+  align-items: center;
+  padding: 30px 24px 20px;
+}
+
+.celebrate-badge {
+  font-size: 1.1rem;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  color: #d97706;
+  background: #fef3c7;
+  padding: 6px 18px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.modal-celebrate h2 {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  color: #15803d;
+  margin-bottom: 8px;
+}
+
+.modal-celebrate p {
+  color: #475569;
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+/* ==========================================================================
+   8. Responsive Mobile & Tablet Layout
+   ========================================================================== */
+@media (max-width: 768px) {
+  .workspace-area {
+    flex-direction: column-reverse;
+  }
+
+  .component-tray {
+    width: 100%;
+    height: 105px;
+    border-right: none;
+    border-top: 2px solid #e2e8f0;
+  }
+
+  .tray-header {
+    display: none;
+  }
+
+  .tray-items-scroller {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 12px;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tray-item {
+    flex-shrink: 0;
+    width: 80px;
+    padding: 6px 4px;
+  }
+
+  .item-preview {
+    min-height: 38px;
+  }
+
+  .item-name {
+    font-size: 0.72rem;
+  }
+
+  .workbench-controls {
+    bottom: 12px;
+    right: 12px;
+  }
+
+  .wb-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .app-title {
+    font-size: 1rem;
+  }
+
+  .app-subtitle {
+    display: none;
+  }
+
+  .canvas-zoom-controls {
+    bottom: 12px;
+    left: 12px;
+  }
+
+  .zoom-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+
+  .tab-label {
+    display: none;
+  }
+}
