@@ -294,6 +294,7 @@
       this.touchPinchDistance = null;
       this.touchPinchScale = 1.0;
 
+      this.initLoadingScreen();
       this.initEvents();
       this.startAnimationLoop();
       this.loadInitialPreset();
@@ -993,6 +994,33 @@
       this.updateComponentActionsPosition();
     }
 
+    initLoadingScreen() {
+      const screen = document.getElementById('app-loading-screen');
+      if (!screen) return;
+      const fill = document.getElementById('loading-progress-fill');
+      const text = document.getElementById('loading-status-text');
+
+      if (fill) fill.style.width = '45%';
+      if (text) text.textContent = 'Menyiapkan Meja Kerja Fisika...';
+
+      setTimeout(() => {
+        if (fill) fill.style.width = '85%';
+        if (text) text.textContent = 'Memuat Komponen & Mesin Listrik...';
+      }, 250);
+
+      setTimeout(() => {
+        if (fill) fill.style.width = '100%';
+        if (text) text.textContent = 'Laboratorium Siap! 🚀';
+      }, 550);
+
+      setTimeout(() => {
+        screen.classList.add('fade-out');
+        setTimeout(() => {
+          if (screen.parentNode) screen.parentNode.removeChild(screen);
+        }, 500);
+      }, 850);
+    }
+
     updateComponentActionsPosition() {
       if (!this.selectedComponentId) {
         this.compActionsContainer.classList.add('hidden');
@@ -1010,21 +1038,58 @@
       const v2 = this.vertices.get(comp.v2Id);
       if (!v1 || !v2) return;
 
-      const cx = (v1.x + v2.x) / 2;
-      const minY = Math.min(v1.y, v2.y);
-      const maxY = Math.max(v1.y, v2.y);
+      const dx = v2.x - v1.x;
+      const dy = v2.y - v1.y;
 
-      const topScreenPos = this.worldToScreen(cx, minY);
-      const botScreenPos = this.worldToScreen(cx, maxY);
-
-      // Jarak offset 38px dari komponen di layar agar tidak menutupi komponen
-      let screenY = topScreenPos.y - 38;
-      if (screenY < 55) {
-        screenY = botScreenPos.y + 38;
+      // Jarak setengah tinggi petak sorotan (selection-halo) di koordinat dunia
+      let haloHalfH = 26;
+      if (comp.type === 'bulb') {
+        haloHalfH = 48; // Kubah lampu kaca tinggi
+      } else if (comp.type === 'battery' || comp.type === 'solar' || comp.type === 'dinamo') {
+        haloHalfH = 42;
+      } else if (comp.type === 'resistor' || comp.type === 'switch' || comp.type === 'iron_nail' || comp.type === 'gold_coin' || comp.type === 'eraser' || comp.type === 'ruler') {
+        haloHalfH = 32;
+      } else if (comp.type === 'voltmeter' || comp.type === 'ammeter') {
+        haloHalfH = 34;
       }
 
-      this.compActionsContainer.style.left = `${topScreenPos.x}px`;
-      this.compActionsContainer.style.top = `${screenY}px`;
+      // Vektor satuan sepanjang dan tegak lurus komponen
+      const dist = Math.hypot(dx, dy) || 1;
+      const ux = dx / dist;
+      const uy = dy / dist;
+      const nx = -uy;
+      const ny = ux;
+
+      // 4 sudut petak sorotan (selection-halo bounding box) di koordinat dunia
+      const pad = 12;
+      const corners = [
+        { x: v1.x - ux * pad - nx * haloHalfH, y: v1.y - uy * pad - ny * haloHalfH },
+        { x: v1.x - ux * pad + nx * haloHalfH, y: v1.y - uy * pad + ny * haloHalfH },
+        { x: v2.x + ux * pad - nx * haloHalfH, y: v2.y + uy * pad - ny * haloHalfH },
+        { x: v2.x + ux * pad + nx * haloHalfH, y: v2.y + uy * pad + ny * haloHalfH }
+      ];
+
+      // Konversikan keempat sudut ke koordinat layar
+      const screenCorners = corners.map(c => this.worldToScreen(c.x, c.y));
+      const minScreenY = Math.min(...screenCorners.map(sc => sc.y));
+      const maxScreenY = Math.max(...screenCorners.map(sc => sc.y));
+      const centerScreenX = screenCorners.reduce((sum, sc) => sum + sc.x, 0) / 4;
+
+      // Tombol action overlay memiliki tinggi 42px (setengah tinggi = 21px).
+      // Berikan margin ekstra aman 44px agar tombol berada SEPENUHNYA DI LUAR petak sorotan!
+      const margin = 44;
+      let targetScreenY = minScreenY - margin; // Melayang di atas petak sorotan
+
+      // Jika di atas terlalu dekat dengan header/toolbar atas (Y < 75), tempatkan di bawah petak sorotan
+      if (targetScreenY < 75) {
+        targetScreenY = maxScreenY + margin; // Melayang di bawah petak sorotan
+      }
+
+      // Pastikan posisi horizontal berada di area layar yang terlihat
+      const screenX = Math.max(90, Math.min(window.innerWidth - 90, centerScreenX));
+
+      this.compActionsContainer.style.left = `${screenX}px`;
+      this.compActionsContainer.style.top = `${targetScreenY}px`;
       this.compActionsContainer.classList.remove('hidden');
 
       // Tampilkan tombol spek volt jika komponen adalah sumber daya listrik (baterai atau panel surya)
@@ -1036,38 +1101,28 @@
       }
 
       if (!this.batterySpecPopup.classList.contains('hidden')) {
-        this.batterySpecPopup.style.left = `${topScreenPos.x}px`;
-        this.batterySpecPopup.style.top = `${screenY}px`;
+        let popupY = targetScreenY < minScreenY ? targetScreenY - 65 : targetScreenY + 65;
+        if (popupY < 80) popupY = maxScreenY + 65;
+        this.batterySpecPopup.style.left = `${screenX}px`;
+        this.batterySpecPopup.style.top = `${popupY}px`;
       }
     }
 
     showBatterySpec(comp) {
       if (!comp || (comp.type !== 'battery' && comp.type !== 'solar')) return;
-      const v1 = this.vertices.get(comp.v1Id);
-      const v2 = this.vertices.get(comp.v2Id);
-      if (!v1 || !v2) return;
-
-      const cx = (v1.x + v2.x) / 2;
-      const minY = Math.min(v1.y, v2.y);
-      const maxY = Math.max(v1.y, v2.y);
-
-      const topScreenPos = this.worldToScreen(cx, minY);
-      const botScreenPos = this.worldToScreen(cx, maxY);
-      let screenY = topScreenPos.y - 45;
-      if (screenY < 95) screenY = botScreenPos.y + 45;
-
       const titleElem = document.getElementById('spec-popup-title');
       if (titleElem) {
         titleElem.textContent = comp.type === 'solar' ? '☀️ Panel Surya' : '⚡ Atur Baterai';
       }
 
       const volt = comp.voltage !== undefined ? comp.voltage : (comp.type === 'solar' ? 3.0 : 1.5);
-      document.getElementById('spec-volt-display').textContent = `${volt.toFixed(1)} V`;
-      document.getElementById('slider-voltage').value = volt;
+      const displayElem = document.getElementById('spec-volt-display');
+      if (displayElem) displayElem.textContent = `${volt.toFixed(1)} V`;
+      const sliderElem = document.getElementById('slider-voltage');
+      if (sliderElem) sliderElem.value = volt;
 
-      this.batterySpecPopup.style.left = `${topScreenPos.x}px`;
-      this.batterySpecPopup.style.top = `${screenY}px`;
       this.batterySpecPopup.classList.remove('hidden');
+      this.updateComponentActionsPosition();
     }
 
     hideBatterySpec() {
@@ -1090,31 +1145,16 @@
       this.updateSimulation();
     }
 
-    // Starter setup (Battery connected to bulb with wires)
+    // Memulai aplikasi dengan kanvas bersih dan kosong sesuai permintaan
     loadInitialPreset() {
-      const rect = this.workbench.getBoundingClientRect();
-      const w = rect.width > 200 ? rect.width : 600;
-      const h = rect.height > 200 ? rect.height : 420;
-
-      const batX = w * 0.3;
-      const batY = h * 0.45;
-      const bulbX = w * 0.65;
-      const bulbY = h * 0.45;
-
-      // 1. Battery (horizontal)
-      const bat = this.spawnComponent('battery', batX - 60, batY, batX + 60, batY);
-
-      // 2. Light bulb
-      const bulb = this.spawnComponent('bulb', bulbX - 50, bulbY, bulbX + 50, bulbY);
-
-      // 3. Top connecting wire (Merged into battery pos and bulb v1)
-      const wireTop = this.spawnComponent('wire', batX + 60, batY, bulbX - 50, bulbY);
-      this.mergeVertices(wireTop.v1Id, bat.v2Id);
-      this.mergeVertices(wireTop.v2Id, bulb.v1Id);
-
-      this.showToast('Gunakan Kabel untuk menghubungkan ujung baterai (-) ke lampu!', 'normal');
+      this.components = [];
+      this.vertices.clear();
+      this.selectedComponentId = null;
+      this.hideScissors();
+      if (this.selectionToolbar) this.selectionToolbar.classList.add('hidden');
       this.render();
       this.updateSimulation();
+      this.showToast('Kanvas siap! Tarik komponen dari panel samping untuk mulai merakit ⚡', 'normal');
     }
 
     removeComponent(id) {

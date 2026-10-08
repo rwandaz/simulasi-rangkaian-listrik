@@ -11,6 +11,38 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- ==========================================
+       APP LOADING SCREEN
+       ========================================== -->
+  <div id="app-loading-screen" class="app-loading-screen" role="progressbar" aria-label="Memuat aplikasi">
+    <div class="loading-backdrop"></div>
+    <div class="loading-card">
+      <div class="loading-circuit-graphic">
+        <div class="loading-orbit-ring"></div>
+        <div class="loading-pulse-ring"></div>
+        <div class="loading-center-icon">⚡</div>
+        <div class="loading-particle p1"></div>
+        <div class="loading-particle p2"></div>
+        <div class="loading-particle p3"></div>
+      </div>
+      <h1 class="loading-title">Lab Rangkaian Listrik</h1>
+      <p class="loading-subtitle">Laboratorium Interaktif Cilik &bull; oleh Pak Rwanda</p>
+      
+      <div class="loading-progress-wrapper">
+        <div class="loading-progress-bar">
+          <div class="loading-progress-fill" id="loading-progress-fill"></div>
+        </div>
+        <div class="loading-status-text" id="loading-status-text">Menyiapkan Meja Kerja Fisika...</div>
+      </div>
+
+      <div class="loading-badges">
+        <span class="loading-badge">🔋 Arus & Elektron</span>
+        <span class="loading-badge">📟 Multimeter Digital</span>
+        <span class="loading-badge">☀️ Energi Bersih</span>
+      </div>
+    </div>
+  </div>
+
   <div id="app" class="app-container">
     <!-- Header Bar -->
     <header class="app-header">

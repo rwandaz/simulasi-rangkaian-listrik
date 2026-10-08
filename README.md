@@ -12,6 +12,9 @@ Aplikasi web interaktif simulasi rangkaian listrik untuk siswa Sekolah Dasar (SD
    - **Rotasi Presisi 90 Derajat:** Dilengkapi tombol rotasi berikon `🔄` dengan jarak aman agar tidak menutupi komponen.
    - **Sistem Magnet (*Snap & Merge*):** Ujung lingkaran merah komponen otomatis menempel (*"KLEK!"*) menjadi **1 titik sambungan hitam (*junction*)** saat didekatkan.
    - **Alat Gunting di Titik Sambung (Scissors):** Mengklik titik sambungan memunculkan tombol **✂️ Gunting** berjarak aman untuk memisahkan komponen kembali.
+   - **Memulai dengan Kanvas Bersih (Empty Canvas on Startup):** Aplikasi langsung menyambut siswa dengan papan kerja bersih dan kosong, siap untuk kreasi bebas tanpa komponen bawaan yang menghalangi.
+   - **Layar Pemuatan Edukatif (App Loading Screen):** Dilengkapi animasi pemuatan modern berupa atom listrik berputar, orbit partikel, progress bar interaktif, dan transisi fade-out halus saat aplikasi siap digunakan.
+   - **Tombol Aksi Mengambang di Luar Petak Sorotan:** Tombol rotasi (`🔄`), pembalik kutub (`⇄`), pengaturan volt (`⚡`), dan hapus (`🗑️`) otomatis diposisikan melayang secara presisi **di luar batas petak sorotan (selection highlight)** sehingga komponen dan indikator tidak pernah tertutupi.
    - **Pilihan Aliran Listrik (Elektron vs Arus vs Nonaktif/Mati):** Pilihan fleksibel antara **Aliran Elektron** (− ke +), **Arus Konvensional** (+ ke −), atau **Nonaktifkan Semua (Mati 🚫)** untuk mematikan seluruh animasi partikel.
    - **Kontrol Zoom Kanvas:** Fitur zoom in (`➕`), zoom out (`➖`), reset (`100%`), scroll mouse, dan gestur cubit dua jari (pinch gesture) pada layar sentuh.
 
