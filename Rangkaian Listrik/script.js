@@ -272,7 +272,6 @@
       this.componentTray = document.getElementById('component-tray');
       this.btnToggleTray = document.getElementById('btn-toggle-tray');
       this.mobileTrayHandleBar = document.getElementById('mobile-tray-handle-bar');
-      this.btnMobileOpenTray = document.getElementById('btn-mobile-open-tray');
 
       this.isVoltmeterActive = false;
       this.isAmmeterActive = false;
@@ -900,11 +899,20 @@
       btnHelp.addEventListener('click', () => toggleHelp(true));
       btnCloseHelp.addEventListener('click', () => toggleHelp(false));
       btnModalOk.addEventListener('click', () => toggleHelp(false));
+      modalHelp.addEventListener('click', (e) => {
+        if (e.target === modalHelp) toggleHelp(false);
+      });
 
+      const modalSuccess = document.getElementById('modal-success');
       document.getElementById('btn-next-mission-modal').addEventListener('click', () => {
-        document.getElementById('modal-success').classList.add('hidden');
+        if (modalSuccess) modalSuccess.classList.add('hidden');
         this.nextMission();
       });
+      if (modalSuccess) {
+        modalSuccess.addEventListener('click', (e) => {
+          if (e.target === modalSuccess) modalSuccess.classList.add('hidden');
+        });
+      }
 
       document.getElementById('btn-fullscreen').addEventListener('click', () => {
         this.toggleFullscreen();
@@ -1037,12 +1045,6 @@
           this.toggleComponentTray();
         });
       }
-      if (this.btnMobileOpenTray) {
-        this.btnMobileOpenTray.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.toggleComponentTray(false);
-        });
-      }
 
       // Responsive Window Resize Handler
       window.addEventListener('resize', () => {
@@ -1055,15 +1057,6 @@
         }
         if (this.activeJunctionVertexId) {
           this.showScissors(this.activeJunctionVertexId);
-        }
-        // Sync mobile open tray pill visibility
-        if (this.componentTray && this.btnMobileOpenTray) {
-          const isCollapsed = this.componentTray.classList.contains('collapsed');
-          if (window.innerWidth <= 768 && isCollapsed) {
-            this.btnMobileOpenTray.classList.remove('hidden');
-          } else {
-            this.btnMobileOpenTray.classList.add('hidden');
-          }
         }
       });
     }
@@ -1413,9 +1406,16 @@
       const margin = 44;
       let targetScreenY = minScreenY - margin; // Melayang di atas petak sorotan
 
-      // Jika di atas terlalu dekat dengan header/toolbar atas (Y < 75), tempatkan di bawah petak sorotan
-      if (targetScreenY < 75) {
+      // Jika di atas terlalu dekat dengan header atau banner misi, tempatkan di bawah petak sorotan
+      const topSafeMargin = this.currentMode === 'missions' ? (window.innerWidth <= 768 ? 160 : 120) : (window.innerWidth <= 768 ? 95 : 75);
+      if (targetScreenY < topSafeMargin) {
         targetScreenY = maxScreenY + margin; // Melayang di bawah petak sorotan
+      }
+
+      // Pastikan tidak meluap ke bawah melampaui batas kanvas
+      const maxSafeY = (this.workbench ? this.workbench.clientHeight : window.innerHeight) - 45;
+      if (targetScreenY > maxSafeY) {
+        targetScreenY = Math.max(topSafeMargin, minScreenY - margin);
       }
 
       // Pastikan posisi horizontal berada di area layar yang terlihat
@@ -1771,7 +1771,8 @@
       const sPos = this.worldToScreen(v.x, v.y);
 
       // 3. Posisikan tombol putuskan kabel secara dinamis & bebas tabrakan batas layar
-      const isNearTop = sPos.y < 95;
+      const topSafeMargin = this.currentMode === 'missions' ? (window.innerWidth <= 768 ? 160 : 120) : (window.innerWidth <= 768 ? 95 : 75);
+      const isNearTop = sPos.y < topSafeMargin;
       if (isNearTop) {
         this.scissorsContainer.style.transform = 'translate(-50%, 0)';
         this.scissorsContainer.style.marginTop = '24px'; // Tampil di bawah titik sambungan jika dekat bilah atas
@@ -1825,11 +1826,6 @@
       const prevSelected = this.selectedComponentId;
       this.selectedComponentId = compId;
       this.updateSelectionToolbar();
-
-      // Di mode ponsel, tampilkan nama komponen lewat toast atas yang tidak menghalangi kanvas
-      if (prevSelected !== compId && window.innerWidth <= 768 && comp.def) {
-        this.showToast(`${comp.def.icon || '⚡'} ${comp.def.title}`, 'normal');
-      }
 
       // If user tapped switch lever, toggle switch ON/OFF
       if (comp.type === 'switch' && e.target.closest('.switch-clickable')) {
@@ -2242,15 +2238,6 @@
           icon.textContent = isCollapsed ? '▶' : '◀';
         }
         this.btnToggleTray.title = isCollapsed ? 'Perluas Kotak Alat' : 'Ciutkan Kotak Alat';
-      }
-
-      // Update mobile floating open-tray pill
-      if (this.btnMobileOpenTray) {
-        if (isCollapsed && window.innerWidth <= 768) {
-          this.btnMobileOpenTray.classList.remove('hidden');
-        } else {
-          this.btnMobileOpenTray.classList.add('hidden');
-        }
       }
 
       // Ensure meters & probes remain in-bounds after layout dimension change
