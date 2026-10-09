@@ -869,6 +869,87 @@
         });
       }
 
+      // Mobile Instruments Sheet & Toggle Button
+      const btnMobileMeters = document.getElementById('btn-mobile-meters');
+      const mobileMetersModal = document.getElementById('mobile-meters-modal');
+      const btnCloseMetersSheet = document.getElementById('btn-close-meters-sheet');
+      const mobileMetersBackdrop = document.getElementById('mobile-meters-backdrop');
+      const metersSheetHandle = document.getElementById('meters-sheet-handle');
+      const sheetMeterVm = document.getElementById('sheet-meter-vm');
+      const sheetBtnVmToggle = document.getElementById('sheet-btn-vm-toggle');
+      const sheetMeterAm = document.getElementById('sheet-meter-am');
+      const sheetBtnAmToggle = document.getElementById('sheet-btn-am-toggle');
+
+      const openMobileMetersModal = () => {
+        if (!mobileMetersModal) return;
+        this.updateMetersUIState();
+        mobileMetersModal.classList.remove('hidden');
+        this.sound.playClick();
+      };
+
+      const closeMobileMetersModal = () => {
+        if (!mobileMetersModal) return;
+        mobileMetersModal.classList.add('hidden');
+      };
+
+      if (btnMobileMeters) {
+        btnMobileMeters.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openMobileMetersModal();
+        });
+      }
+
+      if (btnCloseMetersSheet) {
+        btnCloseMetersSheet.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeMobileMetersModal();
+        });
+      }
+
+      if (mobileMetersBackdrop) {
+        mobileMetersBackdrop.addEventListener('click', () => {
+          closeMobileMetersModal();
+        });
+      }
+
+      if (metersSheetHandle) {
+        metersSheetHandle.addEventListener('click', () => {
+          closeMobileMetersModal();
+        });
+      }
+
+      const handleToggleVmFromSheet = (e) => {
+        e.stopPropagation();
+        this.toggleVoltmeter(!this.isVoltmeterActive);
+        this.sound.playClick();
+      };
+
+      if (sheetBtnVmToggle) sheetBtnVmToggle.addEventListener('click', handleToggleVmFromSheet);
+      if (sheetMeterVm) {
+        sheetMeterVm.addEventListener('click', (e) => {
+          if (e.target !== sheetBtnVmToggle && !sheetBtnVmToggle.contains(e.target)) {
+            handleToggleVmFromSheet(e);
+          }
+        });
+      }
+
+      const handleToggleAmFromSheet = (e) => {
+        e.stopPropagation();
+        this.toggleAmmeter(!this.isAmmeterActive);
+        this.sound.playClick();
+      };
+
+      if (sheetBtnAmToggle) sheetBtnAmToggle.addEventListener('click', handleToggleAmFromSheet);
+      if (sheetMeterAm) {
+        sheetMeterAm.addEventListener('click', (e) => {
+          if (e.target !== sheetBtnAmToggle && !sheetBtnAmToggle.contains(e.target)) {
+            handleToggleAmFromSheet(e);
+          }
+        });
+      }
+
+      this.updateMetersUIState();
+
       // Drag handles for floating meters & probes
       if (this.floatingVoltmeter) {
         this.floatingVoltmeter.addEventListener('pointerdown', (e) => {
@@ -1837,6 +1918,11 @@
       this.selectedComponentId = compId;
       this.updateSelectionToolbar();
 
+      // Di mode ponsel, tampilkan nama komponen lewat toast atas yang tidak menghalangi kanvas
+      if (prevSelected !== compId && window.innerWidth <= 768 && comp.def) {
+        this.showToast(`${comp.def.icon || '⚡'} ${comp.def.title}`, 'normal');
+      }
+
       // If user tapped switch lever, toggle switch ON/OFF
       if (comp.type === 'switch' && e.target.closest('.switch-clickable')) {
         this.toggleSwitch(comp);
@@ -2169,10 +2255,6 @@
 
     toggleVoltmeter(active) {
       this.isVoltmeterActive = !!active;
-      const btnToggle = document.getElementById('btn-toggle-voltmeter');
-      if (btnToggle) btnToggle.classList.toggle('active', this.isVoltmeterActive);
-      const cardDock = document.getElementById('card-dock-vm');
-      if (cardDock) cardDock.classList.toggle('active', this.isVoltmeterActive);
 
       if (this.floatingVoltmeter) this.floatingVoltmeter.classList.toggle('hidden', !this.isVoltmeterActive);
       if (this.vmProbeRed) this.vmProbeRed.classList.toggle('hidden', !this.isVoltmeterActive);
@@ -2187,14 +2269,11 @@
       } else {
         this.renderMeterWires();
       }
+      this.updateMetersUIState();
     }
 
     toggleAmmeter(active) {
       this.isAmmeterActive = !!active;
-      const btnToggle = document.getElementById('btn-toggle-ammeter');
-      if (btnToggle) btnToggle.classList.toggle('active', this.isAmmeterActive);
-      const cardDock = document.getElementById('card-dock-am');
-      if (cardDock) cardDock.classList.toggle('active', this.isAmmeterActive);
 
       if (this.floatingAmmeter) this.floatingAmmeter.classList.toggle('hidden', !this.isAmmeterActive);
       if (this.amProbeSensor) this.amProbeSensor.classList.toggle('hidden', !this.isAmmeterActive);
@@ -2207,6 +2286,49 @@
         this.showToast('Amperemeter aktif! Arahkan target sensor bundar ke kabel/komponen 🎛️', 'normal');
       } else {
         this.renderMeterWires();
+      }
+      this.updateMetersUIState();
+    }
+
+    updateMetersUIState() {
+      const btnToggleVm = document.getElementById('btn-toggle-voltmeter');
+      if (btnToggleVm) btnToggleVm.classList.toggle('active', this.isVoltmeterActive);
+      const cardDockVm = document.getElementById('card-dock-vm');
+      if (cardDockVm) cardDockVm.classList.toggle('active', this.isVoltmeterActive);
+
+      const btnToggleAm = document.getElementById('btn-toggle-ammeter');
+      if (btnToggleAm) btnToggleAm.classList.toggle('active', this.isAmmeterActive);
+      const cardDockAm = document.getElementById('card-dock-am');
+      if (cardDockAm) cardDockAm.classList.toggle('active', this.isAmmeterActive);
+
+      // Sinkronisasi status di bottom sheet ponsel
+      const sheetBtnVm = document.getElementById('sheet-btn-vm-toggle');
+      const sheetCardVm = document.getElementById('sheet-meter-vm');
+      if (sheetBtnVm) {
+        sheetBtnVm.classList.toggle('active', this.isVoltmeterActive);
+        const textSpan = sheetBtnVm.querySelector('.toggle-text');
+        if (textSpan) textSpan.textContent = this.isVoltmeterActive ? '● Aktif' : '○ Nyalakan';
+      }
+      if (sheetCardVm) sheetCardVm.classList.toggle('active', this.isVoltmeterActive);
+
+      const sheetBtnAm = document.getElementById('sheet-btn-am-toggle');
+      const sheetCardAm = document.getElementById('sheet-meter-am');
+      if (sheetBtnAm) {
+        sheetBtnAm.classList.toggle('active', this.isAmmeterActive);
+        const textSpan = sheetBtnAm.querySelector('.toggle-text');
+        if (textSpan) textSpan.textContent = this.isAmmeterActive ? '● Aktif' : '○ Nyalakan';
+      }
+      if (sheetCardAm) sheetCardAm.classList.toggle('active', this.isAmmeterActive);
+
+      // Sinkronisasi tombol ikon alat ukur di header ponsel
+      const btnMobileMeters = document.getElementById('btn-mobile-meters');
+      const meterActiveDot = document.getElementById('meter-active-dot');
+      const anyMeterActive = this.isVoltmeterActive || this.isAmmeterActive;
+      if (btnMobileMeters) {
+        btnMobileMeters.classList.toggle('active', anyMeterActive);
+      }
+      if (meterActiveDot) {
+        meterActiveDot.classList.toggle('hidden', !anyMeterActive);
       }
     }
 

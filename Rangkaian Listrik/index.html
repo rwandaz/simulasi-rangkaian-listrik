@@ -51,12 +51,19 @@
         <div class="header-left">
           <div class="logo-icon">⚡</div>
           <div class="app-title-group">
-            <h1 class="app-title">Simulasi Rangkaian Listrik</h1>
+            <h1 class="app-title">
+              <span class="title-full">Simulasi Rangkaian Listrik</span>
+              <span class="title-compact">Rangkaian Listrik</span>
+            </h1>
             <span class="app-subtitle">oleh Pak Rwanda</span>
           </div>
         </div>
 
         <div class="header-utilities">
+          <button id="btn-mobile-meters" class="btn-icon mobile-meters-btn" title="Alat Ukur Listrik (Voltmeter &amp; Amperemeter)" aria-label="Alat Ukur">
+            📟
+            <span class="meter-active-dot hidden" id="meter-active-dot"></span>
+          </button>
           <button id="btn-sound" class="btn-icon" title="Suara: Nyala" aria-label="Suara">
             🔊
           </button>
@@ -75,11 +82,11 @@
         <div class="mode-tabs">
           <button id="tab-sandbox" class="tab-btn active" title="Mode Bebas">
             <span class="tab-icon">🛠️</span>
-            <span class="tab-label">Lab Bebas</span>
+            <span class="tab-label"><span class="tab-text-full">Lab Bebas</span><span class="tab-text-short">Bebas</span></span>
           </button>
           <button id="tab-missions" class="tab-btn" title="Mode Misi Edukasi">
             <span class="tab-icon">🏆</span>
-            <span class="tab-label">Tantangan Misi</span>
+            <span class="tab-label"><span class="tab-text-full">Tantangan Misi</span><span class="tab-text-short">Misi</span></span>
           </button>
         </div>
 
@@ -99,7 +106,7 @@
           </button>
         </div>
 
-        <!-- Toggle Alat Ukur Portabel (Voltmeter & Amperemeter Probes) -->
+        <!-- Toggle Alat Ukur Portabel (Voltmeter & Amperemeter Probes) - Layar Desktop -->
         <div class="meter-tools-bar" title="Alat Ukur Listrik Interaktif">
           <button id="btn-toggle-voltmeter" class="meter-btn" title="Buka/Tutup Voltmeter Probe Portabel">
             <span class="meter-btn-icon">📟</span>
@@ -572,6 +579,54 @@
         </div>
       </section>
     </main>
+
+    <!-- Modal Lembar Bawah: Alat Ukur Listrik untuk Layar Ponsel -->
+    <div id="mobile-meters-modal" class="mobile-meters-modal hidden">
+      <div class="mobile-meters-backdrop" id="mobile-meters-backdrop"></div>
+      <div class="mobile-meters-sheet">
+        <div class="sheet-handle-bar" id="meters-sheet-handle">
+          <div class="sheet-handle-pill"></div>
+        </div>
+        <div class="sheet-header">
+          <div class="sheet-title-group">
+            <span class="sheet-title-icon">📟</span>
+            <h3 class="sheet-title">Alat Ukur Listrik</h3>
+          </div>
+          <button id="btn-close-meters-sheet" class="sheet-close-btn" title="Tutup Menu Alat Ukur" aria-label="Tutup">✖</button>
+        </div>
+        <p class="sheet-desc">Aktifkan alat ukur portabel di kanvas untuk menguji tegangan dan kuat arus rangkaian:</p>
+
+        <div class="sheet-meters-list">
+          <!-- 1. Voltmeter Card -->
+          <div class="sheet-meter-card" id="sheet-meter-vm">
+            <div class="sheet-meter-icon-box vm-box">
+              <span>⚡</span>
+            </div>
+            <div class="sheet-meter-info">
+              <span class="sheet-meter-name">Voltmeter Portabel</span>
+              <span class="sheet-meter-sub">Dilengkapi probe merah (+) &amp; hitam (−)</span>
+            </div>
+            <button id="sheet-btn-vm-toggle" class="sheet-meter-toggle-btn" aria-label="Toggle Voltmeter">
+              <span class="toggle-text">○ Nyalakan</span>
+            </button>
+          </div>
+
+          <!-- 2. Amperemeter Card -->
+          <div class="sheet-meter-card" id="sheet-meter-am">
+            <div class="sheet-meter-icon-box am-box">
+              <span>🎛️</span>
+            </div>
+            <div class="sheet-meter-info">
+              <span class="sheet-meter-name">Amperemeter Sensor</span>
+              <span class="sheet-meter-sub">Sensor target bundar nirsentuh 🎯</span>
+            </div>
+            <button id="sheet-btn-am-toggle" class="sheet-meter-toggle-btn" aria-label="Toggle Amperemeter">
+              <span class="toggle-text">○ Nyalakan</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Modal Dialog: Bantuan & Petunjuk Penggunaan -->
     <div id="modal-help" class="modal-backdrop hidden">
