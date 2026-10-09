@@ -1412,16 +1412,6 @@ html, body {
   gap: 6px;
 }
 
-.code-box {
-  background: #1e293b;
-  color: #38bdf8;
-  padding: 12px;
-  border-radius: 8px;
-  font-family: monospace;
-  font-size: 0.78rem;
-  overflow-x: auto;
-  margin-top: 8px;
-}
 
 .modal-footer {
   padding: 14px 20px;
