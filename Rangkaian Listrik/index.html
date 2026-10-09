@@ -46,28 +46,43 @@
   <div id="app" class="app-container">
     <!-- Header Bar -->
     <header class="app-header">
-      <div class="header-left">
-        <div class="logo-icon">⚡</div>
-        <div class="app-title-group">
-          <h1 class="app-title">Simulasi Rangkaian Listrik</h1>
-          <span class="app-subtitle">oleh Pak Rwanda</span>
+      <!-- Main Row: Logo/Brand & Utility Buttons -->
+      <div class="header-main-row">
+        <div class="header-left">
+          <div class="logo-icon">⚡</div>
+          <div class="app-title-group">
+            <h1 class="app-title">Simulasi Rangkaian Listrik</h1>
+            <span class="app-subtitle">oleh Pak Rwanda</span>
+          </div>
+        </div>
+
+        <div class="header-utilities">
+          <button id="btn-sound" class="btn-icon" title="Suara: Nyala" aria-label="Suara">
+            🔊
+          </button>
+          <button id="btn-help" class="btn-icon" title="Petunjuk Bermain" aria-label="Bantuan">
+            ❓
+          </button>
+          <button id="btn-fullscreen" class="btn-icon" title="Layar Penuh" aria-label="Layar Penuh">
+            ⛶
+          </button>
         </div>
       </div>
 
-      <!-- Mode Tabs -->
-      <div class="mode-tabs">
-        <button id="tab-sandbox" class="tab-btn active" title="Mode Bebas">
-          <span class="tab-icon">🛠️</span>
-          <span class="tab-label">Lab Bebas</span>
-        </button>
-        <button id="tab-missions" class="tab-btn" title="Mode Misi Edukasi">
-          <span class="tab-icon">🏆</span>
-          <span class="tab-label">Tantangan Misi</span>
-        </button>
-      </div>
+      <!-- Controls Row: Mode Switcher & Flow Switcher & Tools -->
+      <div class="header-controls-row">
+        <!-- Mode Tabs -->
+        <div class="mode-tabs">
+          <button id="tab-sandbox" class="tab-btn active" title="Mode Bebas">
+            <span class="tab-icon">🛠️</span>
+            <span class="tab-label">Lab Bebas</span>
+          </button>
+          <button id="tab-missions" class="tab-btn" title="Mode Misi Edukasi">
+            <span class="tab-icon">🏆</span>
+            <span class="tab-label">Tantangan Misi</span>
+          </button>
+        </div>
 
-      <!-- Header Controls -->
-      <div class="header-actions">
         <!-- Flow Mode Switcher: Elektron vs Arus vs Mati -->
         <div class="flow-switcher" title="Pilihan Visualisasi Aliran Listrik">
           <button id="btn-flow-electrons" class="flow-btn active" title="Aliran Elektron (Kutub − ke +)">
@@ -95,16 +110,6 @@
             <span class="meter-btn-text">Amperemeter</span>
           </button>
         </div>
-
-        <button id="btn-sound" class="btn-icon" title="Suara: Nyala" aria-label="Suara">
-          🔊
-        </button>
-        <button id="btn-help" class="btn-icon" title="Petunjuk Bermain" aria-label="Bantuan">
-          ❓
-        </button>
-        <button id="btn-fullscreen" class="btn-icon" title="Layar Penuh" aria-label="Layar Penuh">
-          ⛶
-        </button>
       </div>
     </header>
 
