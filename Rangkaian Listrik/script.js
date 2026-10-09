@@ -256,6 +256,8 @@
       this.batterySpecPopup = document.getElementById('battery-spec-popup');
       this.selectionToolbar = document.getElementById('selection-toolbar');
       this.dragGhost = document.getElementById('drag-ghost');
+      this.header = document.querySelector('.app-header');
+      this.missionBar = document.getElementById('mission-bar');
       this.statusToast = document.getElementById('status-toast');
       this.statusMsg = document.getElementById('status-msg');
       this.statusIcon = document.getElementById('status-icon');
@@ -944,6 +946,7 @@
         if (this.currentMissionIdx > 0) {
           this.currentMissionIdx--;
           this.updateMissionUI();
+          this.showToast(`Memulai ${MISSIONS[this.currentMissionIdx].badge}! 🚀`, 'normal');
         }
       });
       document.getElementById('btn-next-mission').addEventListener('click', () => {
@@ -1058,6 +1061,7 @@
         if (this.activeJunctionVertexId) {
           this.showScissors(this.activeJunctionVertexId);
         }
+        this.updateToastPosition();
       });
     }
 
@@ -3563,6 +3567,22 @@
       }
     }
 
+    updateToastPosition() {
+      if (!this.statusToast) return;
+      const applyPos = () => {
+        const missionBar = this.missionBar || document.getElementById('mission-bar');
+        const isMissionActive = this.currentMode === 'missions' && missionBar && !missionBar.classList.contains('hidden');
+        const referenceElem = isMissionActive ? missionBar : (this.header || document.querySelector('.app-header'));
+        if (referenceElem) {
+          const rect = referenceElem.getBoundingClientRect();
+          const targetTop = Math.max(70, Math.round(rect.bottom + 10));
+          this.statusToast.style.top = `${targetTop}px`;
+        }
+      };
+      applyPos();
+      requestAnimationFrame(applyPos);
+    }
+
     showToast(message, type = 'normal') {
       if (this.toastTimer) {
         clearTimeout(this.toastTimer);
@@ -3579,6 +3599,10 @@
       } else {
         this.statusIcon.textContent = '💡';
       }
+
+      // Pastikan posisi melayang selalu tepat di bawah header atau bilah misi kuning
+      this.updateToastPosition();
+
       this.toastTimer = setTimeout(() => {
         if (this.statusToast) {
           this.statusToast.classList.add('fade-out');
