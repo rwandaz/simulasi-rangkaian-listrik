@@ -60,10 +60,6 @@
         </div>
 
         <div class="header-utilities">
-          <button id="btn-mobile-meters" class="btn-icon mobile-meters-btn" title="Alat Ukur Listrik (Voltmeter &amp; Amperemeter)" aria-label="Alat Ukur">
-            📟
-            <span class="meter-active-dot hidden" id="meter-active-dot"></span>
-          </button>
           <button id="btn-sound" class="btn-icon" title="Suara: Nyala" aria-label="Suara">
             🔊
           </button>
@@ -106,15 +102,15 @@
           </button>
         </div>
 
-        <!-- Toggle Alat Ukur Portabel (Voltmeter & Amperemeter Probes) - Layar Desktop -->
-        <div class="meter-tools-bar" title="Alat Ukur Listrik Interaktif">
-          <button id="btn-toggle-voltmeter" class="meter-btn" title="Buka/Tutup Voltmeter Probe Portabel">
+        <!-- Toggle Alat Ukur Portabel (Voltmeter & Amperemeter) -->
+        <div class="meter-tools-bar" id="meter-tools-bar" title="Alat Ukur Listrik Interaktif">
+          <button id="btn-toggle-voltmeter" class="meter-btn" title="Buka/Tutup Voltmeter">
             <span class="meter-btn-icon">📟</span>
-            <span class="meter-btn-text">Voltmeter</span>
+            <span class="meter-btn-text"><span class="meter-text-full">Voltmeter</span><span class="meter-text-short">Volt</span></span>
           </button>
-          <button id="btn-toggle-ammeter" class="meter-btn" title="Buka/Tutup Amperemeter Probe Portabel">
+          <button id="btn-toggle-ammeter" class="meter-btn" title="Buka/Tutup Amperemeter">
             <span class="meter-btn-icon">🎛️</span>
-            <span class="meter-btn-text">Amperemeter</span>
+            <span class="meter-btn-text"><span class="meter-text-full">Amperemeter</span><span class="meter-text-short">Amp</span></span>
           </button>
         </div>
       </div>
@@ -292,30 +288,6 @@
             </div>
             <span class="item-name">Panel Surya</span>
           </div>
-
-          <!-- 11. Amperemeter (Pengukur Kuat Arus Seri) -->
-          <div class="tray-item" data-type="ammeter" title="Amperemeter Digital (Dipasang Seri)">
-            <div class="item-preview item-obj">
-              <svg width="44" height="24" viewBox="0 0 44 24">
-                <rect x="3" y="3" width="38" height="18" rx="3" fill="#0f172a" stroke="#0284c7" stroke-width="1.5" />
-                <rect x="9" y="6" width="26" height="12" rx="1.5" fill="#064e3b" />
-                <text x="22" y="15" font-family="'Fredoka', sans-serif" font-size="8" font-weight="900" fill="#4ade80" text-anchor="middle">0.00A</text>
-              </svg>
-            </div>
-            <span class="item-name">Amperemeter</span>
-          </div>
-
-          <!-- 12. Voltmeter (Pengukur Beda Potensial Paralel) -->
-          <div class="tray-item" data-type="voltmeter" title="Voltmeter Digital (Dipasang Paralel)">
-            <div class="item-preview item-obj">
-              <svg width="44" height="24" viewBox="0 0 44 24">
-                <rect x="3" y="3" width="38" height="18" rx="3" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" />
-                <rect x="9" y="6" width="26" height="12" rx="1.5" fill="#451a03" />
-                <text x="22" y="15" font-family="'Fredoka', sans-serif" font-size="8" font-weight="900" fill="#fef08a" text-anchor="middle">0.00V</text>
-              </svg>
-            </div>
-            <span class="item-name">Voltmeter</span>
-          </div>
         </div>
       </aside>
 
@@ -382,48 +354,6 @@
 
         <!-- Short Circuit Fire/Smoke Overlay (Behind UI, above canvas) -->
         <div id="fx-overlay" class="fx-overlay pointer-events-none"></div>
-
-        <!-- Right-Side Instruments Dock (Panel Alat Ukur) -->
-        <div class="instruments-dock" id="instruments-dock">
-          <div class="dock-header" id="dock-header-toggle" title="Buka / Tutup Panel Alat Ukur">
-            <span class="dock-title">📟 Alat Ukur</span>
-            <span class="dock-toggle-arrow">▾</span>
-          </div>
-          <div class="dock-items">
-            <!-- 1. Voltmeter Card -->
-            <div class="dock-card" id="card-dock-vm" title="Klik untuk menampilkan / menyembunyikan Voltmeter">
-              <div class="dock-card-preview preview-vm">
-                <svg width="40" height="26" viewBox="0 0 40 26">
-                  <rect x="2" y="2" width="36" height="22" rx="4" fill="#f59e0b" stroke="#b45309" stroke-width="1.5" />
-                  <rect x="6" y="5" width="28" height="11" rx="2" fill="#0f172a" />
-                  <text x="20" y="13" font-family="'JetBrains Mono', monospace" font-size="6.5" font-weight="900" fill="#38bdf8" text-anchor="middle" dominant-baseline="central">0.00 V</text>
-                  <circle cx="11" cy="20" r="2" fill="#0f172a" stroke="#ffffff" stroke-width="0.5" />
-                  <circle cx="29" cy="20" r="2" fill="#ef4444" stroke="#ffffff" stroke-width="0.5" />
-                </svg>
-              </div>
-              <div class="dock-card-info">
-                <span class="dock-card-name">Voltmeter</span>
-                <span class="dock-card-sub">Probe Merah &amp; Hitam</span>
-              </div>
-            </div>
-
-            <!-- 2. Amperemeter Card -->
-            <div class="dock-card" id="card-dock-am" title="Klik untuk menampilkan / menyembunyikan Amperemeter">
-              <div class="dock-card-preview preview-am">
-                <svg width="40" height="26" viewBox="0 0 40 26">
-                  <rect x="2" y="2" width="36" height="22" rx="4" fill="#0284c7" stroke="#075985" stroke-width="1.5" />
-                  <rect x="6" y="5" width="28" height="11" rx="2" fill="#022c22" />
-                  <text x="20" y="13" font-family="'JetBrains Mono', monospace" font-size="6.5" font-weight="900" fill="#4ade80" text-anchor="middle" dominant-baseline="central">0.00 A</text>
-                  <circle cx="20" cy="20" r="3" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="2 1" />
-                </svg>
-              </div>
-              <div class="dock-card-info">
-                <span class="dock-card-name">Amperemeter</span>
-                <span class="dock-card-sub">Sensor Target 🎯</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- Floating Scissors Tool (Appears directly above clicked junction, icon only with distance) -->
         <div id="junction-scissors" class="junction-scissors hidden">
@@ -579,54 +509,6 @@
         </div>
       </section>
     </main>
-
-    <!-- Modal Lembar Bawah: Alat Ukur Listrik untuk Layar Ponsel -->
-    <div id="mobile-meters-modal" class="mobile-meters-modal hidden">
-      <div class="mobile-meters-backdrop" id="mobile-meters-backdrop"></div>
-      <div class="mobile-meters-sheet">
-        <div class="sheet-handle-bar" id="meters-sheet-handle">
-          <div class="sheet-handle-pill"></div>
-        </div>
-        <div class="sheet-header">
-          <div class="sheet-title-group">
-            <span class="sheet-title-icon">📟</span>
-            <h3 class="sheet-title">Alat Ukur Listrik</h3>
-          </div>
-          <button id="btn-close-meters-sheet" class="sheet-close-btn" title="Tutup Menu Alat Ukur" aria-label="Tutup">✖</button>
-        </div>
-        <p class="sheet-desc">Aktifkan alat ukur portabel di kanvas untuk menguji tegangan dan kuat arus rangkaian:</p>
-
-        <div class="sheet-meters-list">
-          <!-- 1. Voltmeter Card -->
-          <div class="sheet-meter-card" id="sheet-meter-vm">
-            <div class="sheet-meter-icon-box vm-box">
-              <span>⚡</span>
-            </div>
-            <div class="sheet-meter-info">
-              <span class="sheet-meter-name">Voltmeter Portabel</span>
-              <span class="sheet-meter-sub">Dilengkapi probe merah (+) &amp; hitam (−)</span>
-            </div>
-            <button id="sheet-btn-vm-toggle" class="sheet-meter-toggle-btn" aria-label="Toggle Voltmeter">
-              <span class="toggle-text">○ Nyalakan</span>
-            </button>
-          </div>
-
-          <!-- 2. Amperemeter Card -->
-          <div class="sheet-meter-card" id="sheet-meter-am">
-            <div class="sheet-meter-icon-box am-box">
-              <span>🎛️</span>
-            </div>
-            <div class="sheet-meter-info">
-              <span class="sheet-meter-name">Amperemeter Sensor</span>
-              <span class="sheet-meter-sub">Sensor target bundar nirsentuh 🎯</span>
-            </div>
-            <button id="sheet-btn-am-toggle" class="sheet-meter-toggle-btn" aria-label="Toggle Amperemeter">
-              <span class="toggle-text">○ Nyalakan</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Modal Dialog: Bantuan & Petunjuk Penggunaan -->
     <div id="modal-help" class="modal-backdrop hidden">

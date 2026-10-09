@@ -102,12 +102,12 @@ html, body {
   display: none;
 }
 
-.mobile-meters-btn {
+.meter-text-short {
   display: none;
 }
 
-.mobile-meters-modal {
-  display: none !important;
+.meter-text-full {
+  display: inline;
 }
 
 .app-subtitle {
@@ -1794,10 +1794,6 @@ html, body {
     display: none !important;
   }
 
-  /* 3. Panel Alat Ukur di Ponsel: Sembunyikan dock desktop mengambang */
-  .instruments-dock {
-    display: none !important;
-  }
 
   /* 4. Header Bar 2-Baris Rapi & Tidak Terpotong di Layar Ponsel */
   .app-header {
@@ -1898,52 +1894,21 @@ html, body {
     background: #e2e8f0;
   }
 
-  /* Tombol Alat Ukur di Bilah Atas HP */
-  .mobile-meters-btn {
-    display: flex !important;
-    position: relative;
-  }
-
-  .mobile-meters-btn.active {
-    background: #e0f2fe;
-    border-color: #0284c7;
-    color: #0284c7;
-  }
-
-  .meter-active-dot {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #10b981;
-    border: 1.5px solid #ffffff;
-    box-shadow: 0 0 6px #10b981;
-  }
-
-  .meter-active-dot.hidden {
-    display: none !important;
-  }
-
-  /* Baris 2: Controls Row (Mode Tabs di Kiri, Flow Switcher di Kanan) */
+  /* Baris 2: Controls Row (Mode Tabs di Kiri, Flow Switcher di Tengah, Meter Tools di Kanan) */
   .header-controls-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     width: 100%;
     gap: 4px;
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
   }
 
   .header-controls-row::-webkit-scrollbar {
     display: none;
-  }
-
-  .meter-tools-bar {
-    display: none !important;
   }
 
   .tab-text-full {
@@ -2003,7 +1968,6 @@ html, body {
     border-radius: 999px;
     border: 1.5px solid #cbd5e1;
     gap: 2px;
-    margin-left: auto;
     flex-shrink: 0;
   }
 
@@ -2046,199 +2010,59 @@ html, body {
     white-space: nowrap;
   }
 
-  /* Modal Lembar Bawah (Bottom Sheet) Alat Ukur di Ponsel */
-  .mobile-meters-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    pointer-events: auto;
+  /* Meter Tools Responsif Langsung di Layar HP (100% Dapat Diklik & Menyala) */
+  .meter-tools-bar {
+    display: flex !important;
+    align-items: center;
+    background: #f1f5f9;
+    padding: 2px;
+    border-radius: 999px;
+    border: 1.5px solid #cbd5e1;
+    gap: 2px;
+    flex-shrink: 0;
   }
 
-  .mobile-meters-modal.hidden {
+  .meter-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    height: 30px;
+    border-radius: 999px;
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 700;
+    touch-action: manipulation;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+  }
+
+  .meter-btn.active {
+    background: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .meter-btn#btn-toggle-voltmeter.active {
+    color: #b45309 !important;
+    border: 1.5px solid #f59e0b !important;
+  }
+
+  .meter-btn#btn-toggle-ammeter.active {
+    color: #0369a1 !important;
+    border: 1.5px solid #0284c7 !important;
+  }
+
+  .meter-text-full {
     display: none !important;
   }
 
-  .mobile-meters-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.45);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    animation: fadeInModal 0.2s ease;
-  }
-
-  .mobile-meters-sheet {
-    position: relative;
-    z-index: 2;
-    background: #ffffff;
-    border-radius: 24px 24px 0 0;
-    padding: 12px 18px 24px;
-    box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.25);
-    border-top: 1.5px solid #cbd5e1;
-    animation: slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes slideUpSheet {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-
-  .sheet-handle-bar {
-    display: flex;
-    justify-content: center;
-    padding-bottom: 10px;
-    cursor: pointer;
-  }
-
-  .sheet-handle-pill {
-    width: 40px;
-    height: 5px;
-    background: #cbd5e1;
-    border-radius: 999px;
-  }
-
-  .sheet-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 4px;
-  }
-
-  .sheet-title-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .sheet-title-icon {
-    font-size: 1.4rem;
-  }
-
-  .sheet-title {
-    font-family: var(--font-heading);
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #0f172a;
-    margin: 0;
-  }
-
-  .sheet-close-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 1.5px solid #e2e8f0;
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-
-  .sheet-close-btn:active {
-    background: #e2e8f0;
-  }
-
-  .sheet-desc {
-    font-family: var(--font-body);
-    font-size: 0.78rem;
-    color: #64748b;
-    margin: 0 0 14px 0;
-    line-height: 1.35;
-  }
-
-  .sheet-meters-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .sheet-meter-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    border-radius: 16px;
-    background: #f8fafc;
-    border: 2px solid #e2e8f0;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-
-  .sheet-meter-card.active {
-    background: #f0f9ff;
-    border-color: #38bdf8;
-    box-shadow: 0 3px 10px rgba(2, 132, 199, 0.12);
-  }
-
-  .sheet-meter-icon-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    flex-shrink: 0;
-  }
-
-  .sheet-meter-icon-box.vm-box {
-    background: #fef3c7;
-    border: 1.5px solid #f59e0b;
-  }
-
-  .sheet-meter-icon-box.am-box {
-    background: #e0f2fe;
-    border: 1.5px solid #0284c7;
-  }
-
-  .sheet-meter-info {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-    gap: 2px;
-  }
-
-  .sheet-meter-name {
-    font-family: var(--font-heading);
-    font-size: 0.92rem;
-    font-weight: 800;
-    color: #1e293b;
-  }
-
-  .sheet-meter-sub {
-    font-family: var(--font-body);
-    font-size: 0.74rem;
-    color: #64748b;
-  }
-
-  .sheet-meter-toggle-btn {
-    border: 1.5px solid #cbd5e1;
-    background: #ffffff;
-    color: #475569;
-    padding: 7px 14px;
-    border-radius: 999px;
-    font-family: var(--font-heading);
-    font-size: 0.78rem;
-    font-weight: 700;
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-  }
-
-  .sheet-meter-toggle-btn.active {
-    background: #0284c7;
-    color: #ffffff;
-    border-color: #0284c7;
-    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+  .meter-text-short {
+    display: inline !important;
   }
 
   /* 5. Alat Ukur Mengambang Proporsional & Mudah Ditutup di Ponsel */
@@ -2287,7 +2111,7 @@ html, body {
   }
 
   .floating-probe {
-    transform: scale(0.85);
+    transform: translate(-50%, 0) scale(0.85);
     transform-origin: top center;
   }
 
@@ -2343,6 +2167,11 @@ html, body {
   .flow-btn {
     padding: 4px 6px;
     font-size: 0.73rem;
+  }
+
+  .meter-btn {
+    padding: 4px 6px;
+    font-size: 0.72rem;
   }
 
   .btn-icon {
@@ -2416,122 +2245,13 @@ html, body {
   .flow-text {
     font-size: 0.69rem;
   }
-}
 
-/* ==========================================================================
-   9. Instruments Dock (Panel Alat Ukur - Sisi Kanan Kanvas)
-   ========================================================================== */
-.instruments-dock {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 176px;
-  background: #ffffff;
-  border: 2px solid #cbd5e1;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  z-index: 50;
-  padding: 10px;
-  user-select: none;
-  pointer-events: auto;
-}
-
-.dock-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 6px;
-  border-bottom: 1.5px solid #f1f5f9;
-  margin-bottom: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.dock-toggle-arrow {
-  font-size: 0.75rem;
-  color: #64748b;
-  transition: transform 0.2s ease;
-}
-
-.dock-title {
-  font-family: var(--font-heading);
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #334155;
-  letter-spacing: 0.5px;
-}
-
-.dock-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.dock-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 8px;
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.dock-card:hover {
-  background: #f0f9ff;
-  border-color: #38bdf8;
-  transform: translateY(-1px);
-}
-
-.dock-card.active {
-  background: #e0f2fe;
-  border-color: #0284c7;
-  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25);
-}
-
-.dock-card.active::after {
-  content: '✓';
-  font-size: 0.9rem;
-  font-weight: 900;
-  color: #0284c7;
-  margin-left: auto;
-  padding-right: 4px;
-}
-
-.dock-card-preview {
-  width: 40px;
-  height: 26px;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.dock-card-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.dock-card-name {
-  display: block;
-  font-family: var(--font-heading);
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #0f172a;
-  line-height: 1.1;
-}
-
-.dock-card-sub {
-  display: block;
-  font-size: 0.65rem;
-  color: #64748b;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  .meter-btn {
+    padding: 3px 5px;
+    height: 28px;
+    font-size: 0.69rem;
+    gap: 2px;
+  }
 }
 
 /* ==========================================================================

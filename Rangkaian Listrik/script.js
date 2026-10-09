@@ -269,7 +269,6 @@
       this.vmProbeBlack = document.getElementById('vm-probe-black');
       this.floatingAmmeter = document.getElementById('floating-ammeter');
       this.amProbeSensor = document.getElementById('am-probe-sensor');
-      this.instrumentsDock = document.getElementById('instruments-dock');
       this.componentTray = document.getElementById('component-tray');
       this.btnToggleTray = document.getElementById('btn-toggle-tray');
       this.mobileTrayHandleBar = document.getElementById('mobile-tray-handle-bar');
@@ -400,6 +399,8 @@
     initEvents() {
       // 1. Toolbox Pointer Drag-and-Drop + Tap to Spawn
       let trayDragState = null;
+      let lastTraySpawnTime = 0;
+
       document.querySelectorAll('.tray-item').forEach(item => {
         const type = item.getAttribute('data-type');
         item.addEventListener('pointerdown', (e) => {
@@ -413,6 +414,16 @@
             pointerType: e.pointerType,
             hasMoved: false
           };
+        });
+
+        // Click event listener directly on item for 100% guaranteed tap responsiveness
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (Date.now() - lastTraySpawnTime < 350) return;
+          lastTraySpawnTime = Date.now();
+          this.spawnComponentCenter(type);
+          this.sound.playClick();
         });
       });
 
@@ -443,13 +454,13 @@
         // Pada perangkat layar sentuh: bila pengguna menggeser ke samping dalam tray,
         // prioritaskan scroll mulus toolbox tanpa memunculkan bayangan drag
         if (trayDragState.pointerType === 'touch' && !trayDragState.hasMoved) {
-          if (Math.abs(dx) > 12 && Math.abs(dy) < 18) {
+          if (Math.abs(dx) > 18 && Math.abs(dy) < 22) {
             trayDragState = null;
             return;
           }
         }
 
-        if (dist > 10 && !trayDragState.hasMoved) {
+        if (dist > 14 && !trayDragState.hasMoved) {
           trayDragState.hasMoved = true;
           this.showDragGhost(trayDragState.type, e.clientX, e.clientY);
         }
@@ -509,13 +520,23 @@
             const worldPos = this.screenToWorld(e.clientX, e.clientY);
             this.spawnComponentAt(trayDragState.type, worldPos.x, worldPos.y);
             this.sound.playClick();
+            lastTraySpawnTime = Date.now();
           }
           this.hideDragGhost();
         } else {
           // Tap / click without movement
-          this.spawnComponentCenter(trayDragState.type);
-          this.sound.playClick();
+          if (Date.now() - lastTraySpawnTime >= 350) {
+            lastTraySpawnTime = Date.now();
+            this.spawnComponentCenter(trayDragState.type);
+            this.sound.playClick();
+          }
         }
+        trayDragState = null;
+      });
+
+      window.addEventListener('pointercancel', () => {
+        this.snapHalo.classList.add('hidden');
+        this.hideDragGhost();
         trayDragState = null;
       });
 
@@ -812,34 +833,10 @@
       const btnCloseVm = document.getElementById('btn-close-vm');
       const btnCloseAm = document.getElementById('btn-close-am');
 
-      // Right-side instruments dock elements
-      const cardDockVm = document.getElementById('card-dock-vm');
-      const cardDockAm = document.getElementById('card-dock-am');
-      const dockHeaderToggle = document.getElementById('dock-header-toggle');
-
-      if (dockHeaderToggle && this.instrumentsDock) {
-        dockHeaderToggle.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.instrumentsDock.classList.toggle('collapsed');
-        });
-      }
-
-      // Default terlipat (collapsed) pada perangkat ponsel/tablet agar kanvas maksimal
-      if (window.innerWidth <= 768 && this.instrumentsDock) {
-        this.instrumentsDock.classList.add('collapsed');
-      }
-
       if (btnToggleVm) {
-        btnToggleVm.addEventListener('click', () => {
+        btnToggleVm.addEventListener('click', (e) => {
+          e.preventDefault();
           this.toggleVoltmeter(!this.isVoltmeterActive);
-        });
-      }
-      if (cardDockVm) {
-        cardDockVm.addEventListener('click', () => {
-          this.toggleVoltmeter(!this.isVoltmeterActive);
-          if (window.innerWidth <= 768 && this.instrumentsDock) {
-            this.instrumentsDock.classList.add('collapsed');
-          }
         });
       }
       if (btnCloseVm) {
@@ -850,101 +847,15 @@
       }
 
       if (btnToggleAm) {
-        btnToggleAm.addEventListener('click', () => {
+        btnToggleAm.addEventListener('click', (e) => {
+          e.preventDefault();
           this.toggleAmmeter(!this.isAmmeterActive);
-        });
-      }
-      if (cardDockAm) {
-        cardDockAm.addEventListener('click', () => {
-          this.toggleAmmeter(!this.isAmmeterActive);
-          if (window.innerWidth <= 768 && this.instrumentsDock) {
-            this.instrumentsDock.classList.add('collapsed');
-          }
         });
       }
       if (btnCloseAm) {
         btnCloseAm.addEventListener('click', (e) => {
           e.stopPropagation();
           this.toggleAmmeter(false);
-        });
-      }
-
-      // Mobile Instruments Sheet & Toggle Button
-      const btnMobileMeters = document.getElementById('btn-mobile-meters');
-      const mobileMetersModal = document.getElementById('mobile-meters-modal');
-      const btnCloseMetersSheet = document.getElementById('btn-close-meters-sheet');
-      const mobileMetersBackdrop = document.getElementById('mobile-meters-backdrop');
-      const metersSheetHandle = document.getElementById('meters-sheet-handle');
-      const sheetMeterVm = document.getElementById('sheet-meter-vm');
-      const sheetBtnVmToggle = document.getElementById('sheet-btn-vm-toggle');
-      const sheetMeterAm = document.getElementById('sheet-meter-am');
-      const sheetBtnAmToggle = document.getElementById('sheet-btn-am-toggle');
-
-      const openMobileMetersModal = () => {
-        if (!mobileMetersModal) return;
-        this.updateMetersUIState();
-        mobileMetersModal.classList.remove('hidden');
-        this.sound.playClick();
-      };
-
-      const closeMobileMetersModal = () => {
-        if (!mobileMetersModal) return;
-        mobileMetersModal.classList.add('hidden');
-      };
-
-      if (btnMobileMeters) {
-        btnMobileMeters.addEventListener('click', (e) => {
-          e.stopPropagation();
-          openMobileMetersModal();
-        });
-      }
-
-      if (btnCloseMetersSheet) {
-        btnCloseMetersSheet.addEventListener('click', (e) => {
-          e.stopPropagation();
-          closeMobileMetersModal();
-        });
-      }
-
-      if (mobileMetersBackdrop) {
-        mobileMetersBackdrop.addEventListener('click', () => {
-          closeMobileMetersModal();
-        });
-      }
-
-      if (metersSheetHandle) {
-        metersSheetHandle.addEventListener('click', () => {
-          closeMobileMetersModal();
-        });
-      }
-
-      const handleToggleVmFromSheet = (e) => {
-        e.stopPropagation();
-        this.toggleVoltmeter(!this.isVoltmeterActive);
-        this.sound.playClick();
-      };
-
-      if (sheetBtnVmToggle) sheetBtnVmToggle.addEventListener('click', handleToggleVmFromSheet);
-      if (sheetMeterVm) {
-        sheetMeterVm.addEventListener('click', (e) => {
-          if (e.target !== sheetBtnVmToggle && !sheetBtnVmToggle.contains(e.target)) {
-            handleToggleVmFromSheet(e);
-          }
-        });
-      }
-
-      const handleToggleAmFromSheet = (e) => {
-        e.stopPropagation();
-        this.toggleAmmeter(!this.isAmmeterActive);
-        this.sound.playClick();
-      };
-
-      if (sheetBtnAmToggle) sheetBtnAmToggle.addEventListener('click', handleToggleAmFromSheet);
-      if (sheetMeterAm) {
-        sheetMeterAm.addEventListener('click', (e) => {
-          if (e.target !== sheetBtnAmToggle && !sheetBtnAmToggle.contains(e.target)) {
-            handleToggleAmFromSheet(e);
-          }
         });
       }
 
@@ -1044,9 +955,6 @@
           this.updateSelectionToolbar();
           this.updateComponentActionsPosition();
           this.render();
-          if (window.innerWidth <= 768 && this.instrumentsDock && !this.instrumentsDock.classList.contains('collapsed')) {
-            this.instrumentsDock.classList.add('collapsed');
-          }
         }
       });
 
@@ -2293,43 +2201,9 @@
     updateMetersUIState() {
       const btnToggleVm = document.getElementById('btn-toggle-voltmeter');
       if (btnToggleVm) btnToggleVm.classList.toggle('active', this.isVoltmeterActive);
-      const cardDockVm = document.getElementById('card-dock-vm');
-      if (cardDockVm) cardDockVm.classList.toggle('active', this.isVoltmeterActive);
 
       const btnToggleAm = document.getElementById('btn-toggle-ammeter');
       if (btnToggleAm) btnToggleAm.classList.toggle('active', this.isAmmeterActive);
-      const cardDockAm = document.getElementById('card-dock-am');
-      if (cardDockAm) cardDockAm.classList.toggle('active', this.isAmmeterActive);
-
-      // Sinkronisasi status di bottom sheet ponsel
-      const sheetBtnVm = document.getElementById('sheet-btn-vm-toggle');
-      const sheetCardVm = document.getElementById('sheet-meter-vm');
-      if (sheetBtnVm) {
-        sheetBtnVm.classList.toggle('active', this.isVoltmeterActive);
-        const textSpan = sheetBtnVm.querySelector('.toggle-text');
-        if (textSpan) textSpan.textContent = this.isVoltmeterActive ? '● Aktif' : '○ Nyalakan';
-      }
-      if (sheetCardVm) sheetCardVm.classList.toggle('active', this.isVoltmeterActive);
-
-      const sheetBtnAm = document.getElementById('sheet-btn-am-toggle');
-      const sheetCardAm = document.getElementById('sheet-meter-am');
-      if (sheetBtnAm) {
-        sheetBtnAm.classList.toggle('active', this.isAmmeterActive);
-        const textSpan = sheetBtnAm.querySelector('.toggle-text');
-        if (textSpan) textSpan.textContent = this.isAmmeterActive ? '● Aktif' : '○ Nyalakan';
-      }
-      if (sheetCardAm) sheetCardAm.classList.toggle('active', this.isAmmeterActive);
-
-      // Sinkronisasi tombol ikon alat ukur di header ponsel
-      const btnMobileMeters = document.getElementById('btn-mobile-meters');
-      const meterActiveDot = document.getElementById('meter-active-dot');
-      const anyMeterActive = this.isVoltmeterActive || this.isAmmeterActive;
-      if (btnMobileMeters) {
-        btnMobileMeters.classList.toggle('active', anyMeterActive);
-      }
-      if (meterActiveDot) {
-        meterActiveDot.classList.toggle('hidden', !anyMeterActive);
-      }
     }
 
     updateMeterDOMPositions() {
